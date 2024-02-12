@@ -1,0 +1,18 @@
+entity Student {
+    id UUID
+    firstname String
+    lastname String
+    age String
+}
+
+entity Group {
+    id UUID
+    code String
+    startYear Integer
+}
+
+relationship ManyToOne {
+    Student{group} to Group
+}
+
+paginate Student with pagination
