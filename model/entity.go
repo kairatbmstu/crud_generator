@@ -39,6 +39,8 @@ type PaginationType string
 
 type Field struct {
 	Name             string
+	ColumnName       string
+	JsonName         string
 	Type             FieldType
 	IsRequired       bool
 	PaginatationType PaginationType
