@@ -34,3 +34,7 @@ type Relation struct {
 	ModelTwo     Model
 	RelationType RelationType
 }
+
+type File struct {
+	Name string
+}
