@@ -37,6 +37,7 @@ func main() {
 func ParseModel(tokens []Token) model.Model {
 	var entities = []model.Entity{}
 	var relationships = []model.Relationship{}
+	var paginates = []model.Paginate{}
 
 	for index, token := range tokens {
 		switch token.TokenType {
@@ -49,6 +50,11 @@ func ParseModel(tokens []Token) model.Model {
 			if token.Value == Keyword_Relationship {
 				relationship := ParseRelationship(&index, &tokens)
 				relationships = append(relationships, *relationship)
+			}
+
+			if token.Value == Keyword_Paginate {
+				paginate := ParsePaginate(&index, &tokens)
+				paginates = append(paginates, *paginate)
 			}
 		case TokenType_Parenthesis:
 		case TokenType_Brace:
