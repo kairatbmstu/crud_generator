@@ -17,6 +17,11 @@ const (
 	TokenType_Identifier  = "identifier"
 )
 
+const (
+	Keyword_Entity       = "entity"
+	Keyword_Relationship = "relationship"
+)
+
 type TokenType string
 
 type Token struct {
@@ -28,22 +33,37 @@ func main() {
 	fmt.Println("Hello World!")
 }
 
-func ParseModel() model.Model {
+func ParseModel(tokens []Token) model.Model {
+	for index, token := range tokens {
+		switch token.TokenType {
+		case TokenType_Keyword:
+			if token.Value == Keyword_Entity {
+				ParseEntity(&index, &tokens)
+			}
+
+			if token.Value == Keyword_Relationship {
+				ParseEntity(&index, &tokens)
+			}
+		case TokenType_Parenthesis:
+		case TokenType_Brace:
+		case TokenType_Identifier:
+		}
+	}
 	return model.Model{}
 }
 
-func ParseEntity() []model.Entity {
+func ParseEntity(index *int, tokens *[]Token) []model.Entity {
 	return []model.Entity{}
 }
 
-func ParseField() []model.Field {
+func ParseField(index *int, tokens *[]Token) []model.Field {
 	return []model.Field{}
 }
 
-func ParseRelationshipGroup() []model.Relationship {
+func ParseRelationshipGroup(index *int, tokens *[]Token) []model.Relationship {
 	return []model.Relationship{}
 }
 
-func ParseRelationship() model.Relationship {
+func ParseRelationship(index *int, tokens *[]Token) model.Relationship {
 	return model.Relationship{}
 }
