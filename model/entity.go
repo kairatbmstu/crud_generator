@@ -68,6 +68,11 @@ type Relationship struct {
 	RelationType   RelationshipType
 }
 
+type Paginate struct {
+	EntityName     string
+	PaginationType string
+}
+
 type File struct {
 	Name string
 }

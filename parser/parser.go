@@ -20,6 +20,7 @@ const (
 const (
 	Keyword_Entity       = "entity"
 	Keyword_Relationship = "relationship"
+	Keyword_Paginate     = "paginate"
 )
 
 type TokenType string
@@ -34,15 +35,20 @@ func main() {
 }
 
 func ParseModel(tokens []Token) model.Model {
+	var entities = []model.Entity{}
+	var relationships = []model.Relationship{}
+
 	for index, token := range tokens {
 		switch token.TokenType {
 		case TokenType_Keyword:
 			if token.Value == Keyword_Entity {
-				ParseEntity(&index, &tokens)
+				entity := ParseEntity(&index, &tokens)
+				entities = append(entities, *entity)
 			}
 
 			if token.Value == Keyword_Relationship {
-				ParseEntity(&index, &tokens)
+				relationship := ParseRelationship(&index, &tokens)
+				relationships = append(relationships, *relationship)
 			}
 		case TokenType_Parenthesis:
 		case TokenType_Brace:
@@ -52,18 +58,24 @@ func ParseModel(tokens []Token) model.Model {
 	return model.Model{}
 }
 
-func ParseEntity(index *int, tokens *[]Token) []model.Entity {
-	return []model.Entity{}
+func ParseEntity(index *int, tokens *[]Token) *model.Entity {
+	*index++
+
+	return &model.Entity{}
 }
 
-func ParseField(index *int, tokens *[]Token) []model.Field {
-	return []model.Field{}
+func ParseField(index *int, tokens *[]Token) *model.Field {
+	return &model.Field{}
 }
 
 func ParseRelationshipGroup(index *int, tokens *[]Token) []model.Relationship {
 	return []model.Relationship{}
 }
 
-func ParseRelationship(index *int, tokens *[]Token) model.Relationship {
-	return model.Relationship{}
+func ParseRelationship(index *int, tokens *[]Token) *model.Relationship {
+	return &model.Relationship{}
+}
+
+func ParsePaginate(index *int, tokens *[]Token) *model.Paginate {
+	return &model.Paginate{}
 }
