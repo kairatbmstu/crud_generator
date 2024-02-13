@@ -73,6 +73,6 @@ type File struct {
 }
 
 type Model struct {
-	Entities  []Entity
-	Relations []Relationship
+	Entities      []Entity
+	Relationships []Relationship
 }
