@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"strings"
 
 	"example.com/ast1/model"
 )
@@ -32,6 +34,20 @@ type Token struct {
 
 func main() {
 	fmt.Println("Hello World!")
+	data, err := ioutil.ReadFile("example.jdl")
+	if err != nil {
+		panic(err)
+	}
+	jdlText := string(data)
+
+	tokens := strings.FieldsFunc(jdlText, func(r rune) bool {
+		return r == ' ' || r == '{' || r == '}'
+	})
+
+	for _, field := range tokens {
+		fmt.Println(field)
+	}
+	fmt.Println(tokens)
 }
 
 func ParseModel(tokens []Token) model.Model {
