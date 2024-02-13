@@ -33,7 +33,6 @@ type Token struct {
 }
 
 func main() {
-	fmt.Println("Hello World!")
 	data, err := ioutil.ReadFile("example.jdl")
 	if err != nil {
 		panic(err)
@@ -44,10 +43,10 @@ func main() {
 		return r == ' ' || r == '{' || r == '}'
 	})
 
-	for _, field := range tokens {
-		fmt.Println(field)
+	for _, token := range tokens {
+		fmt.Println(strings.TrimSpace(token))
 	}
-	fmt.Println(tokens)
+	//fmt.Println(tokens)
 }
 
 func ParseModel(tokens []Token) model.Model {
