@@ -84,7 +84,7 @@ func main() {
 	// 	return
 	// }
 
-	codegenerator.GenerateCode(&model.Entity{
+	codegenerator.GenerateEntity(&model.Entity{
 		Name: "Student",
 		Fields: []model.Field{
 			model.Field{

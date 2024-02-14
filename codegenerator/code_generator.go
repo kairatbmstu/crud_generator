@@ -14,7 +14,7 @@ import (
 type CodeGenerator struct {
 }
 
-func GenerateCode(entity *model.Entity) {
+func GenerateEntity(directory string, entity *model.Entity) {
 	// Create a new file set.
 	fset := token.NewFileSet()
 
@@ -96,4 +96,16 @@ func GenerateCode(entity *model.Entity) {
 		fmt.Println("Error writing AST to file:", err)
 		return
 	}
+}
+
+func GenerateRepository(directory string, entity *model.Entity) {
+
+}
+
+func GenerateService(directory string, entity *model.Entity) {
+
+}
+
+func GenerateRestApiHandler(directory string, entity *model.Entity) {
+
 }
