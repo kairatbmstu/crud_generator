@@ -84,7 +84,61 @@ func main() {
 	// 	return
 	// }
 
-	codegenerator.GenerateEntity(&model.Entity{
+	codegenerator.GenerateEntity("test/model", &model.Entity{
+		Name: "Student",
+		Fields: []model.Field{
+			model.Field{
+				Name: "id",
+				Type: model.FieldType_uuid,
+			},
+			model.Field{
+				Name: "name",
+				Type: model.FieldType_string,
+			},
+			model.Field{
+				Name: "age",
+				Type: model.FieldType_int,
+			},
+		},
+	})
+
+	codegenerator.GenerateRepository("test/repository", &model.Entity{
+		Name: "Student",
+		Fields: []model.Field{
+			model.Field{
+				Name: "id",
+				Type: model.FieldType_uuid,
+			},
+			model.Field{
+				Name: "name",
+				Type: model.FieldType_string,
+			},
+			model.Field{
+				Name: "age",
+				Type: model.FieldType_int,
+			},
+		},
+	})
+
+	codegenerator.GenerateService("test/service", &model.Entity{
+		Name: "Student",
+		Fields: []model.Field{
+			model.Field{
+				Name: "id",
+				Type: model.FieldType_uuid,
+			},
+			model.Field{
+				Name: "name",
+				Type: model.FieldType_string,
+			},
+			model.Field{
+				Name: "age",
+				Type: model.FieldType_int,
+			},
+		},
+	})
+
+	codegenerator.GenerateRestApiHandler("test/handler", &model.Entity{
 		Name: "Student",
 		Fields: []model.Field{
 			model.Field{
