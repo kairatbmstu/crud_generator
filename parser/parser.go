@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"strings"
@@ -49,7 +50,7 @@ func main() {
 	//fmt.Println(tokens)
 }
 
-func ParseModel(tokens []Token) model.Model {
+func ParseModel(tokens []Token) (*model.Model, error) {
 	var entities = []model.Entity{}
 	var relationships = []model.Relationship{}
 	var paginates = []model.Paginate{}
@@ -58,7 +59,10 @@ func ParseModel(tokens []Token) model.Model {
 		switch token.TokenType {
 		case TokenType_Keyword:
 			if token.Value == Keyword_Entity {
-				entity := ParseEntity(&index, &tokens)
+				entity, err := ParseEntity(&index, &tokens)
+				if err != nil {
+					return nil, err
+				}
 				entities = append(entities, *entity)
 			}
 
@@ -76,17 +80,57 @@ func ParseModel(tokens []Token) model.Model {
 		case TokenType_Identifier:
 		}
 	}
-	return model.Model{}
+	return &model.Model{}, nil
 }
 
-func ParseEntity(index *int, tokens *[]Token) *model.Entity {
+func ParseEntity(index *int, tokens *[]Token) (*model.Entity, error) {
 	*index++
+	identifierName := (*tokens)[*index]
+	*index++
+	openParenthesis := (*tokens)[*index]
+	entity := model.Entity{}
+	entity.Name = identifierName.Value
 
-	return &model.Entity{}
+	if openParenthesis.Value != "{" {
+		return nil, errors.New("Open parenthesis should have been found { but " + openParenthesis.Value + " was found")
+	}
+
+	fields, err := ParseFields(index, tokens)
+
+	if err != nil {
+		return nil, err
+	}
+
+	entity.Fields = *fields
+
+	*index++
+	closeParenthesis := (*tokens)[*index]
+	if closeParenthesis.Value != "{" {
+		return nil, errors.New("{ should have been found but " + closeParenthesis.Value + " was found")
+	}
+
+	ParseFields(index, tokens)
+
+	return &entity, nil
 }
 
-func ParseField(index *int, tokens *[]Token) *model.Field {
-	return &model.Field{}
+func ParseFields(index *int, tokens *[]Token) (*[]model.Field, error) {
+	fields := []model.Field{}
+	for i := *index; i < len((*tokens)); i++ {
+		field, err := ParseField(index, tokens)
+		if err != nil {
+			return nil, err
+		}
+		fields = append(fields, *field)
+		if (*tokens)[i].Value != "," {
+			return nil, errors.New(", should have been found  but " + (*tokens)[i].Value + " was found")
+		}
+	}
+	return &fields, nil
+}
+
+func ParseField(index *int, tokens *[]Token) (*model.Field, error) {
+	return &model.Field{}, nil
 }
 
 func ParseRelationshipGroup(index *int, tokens *[]Token) []model.Relationship {
