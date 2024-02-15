@@ -26,38 +26,21 @@ func GenerateEntity(directory string, entity *model.Entity) {
 
 	// Import declarations
 	imports := []*ast.ImportSpec{
+
 		{
 			Path: &ast.BasicLit{
 				Kind:  token.STRING,
-				Value: "\"database/sql\"",
-			},
-		},
-		{
-			Path: &ast.BasicLit{
-				Kind:  token.STRING,
-				Value: "\"fmt\"",
-			},
-		},
-		{
-			Path: &ast.BasicLit{
-				Kind:  token.STRING,
-				Value: "\"log\"",
-			},
-		},
-		{
-			Path: &ast.BasicLit{
-				Kind:  token.STRING,
-				Value: "\"github.com/lib/pq\"",
+				Value: "\"github.com/google/uuid\"",
 			},
 		},
 	}
 
-	root.Imports = imports
+	root.Imports = append(root.Imports, imports...)
 
 	astFields := []*ast.Field{}
 	for _, field := range entity.Fields {
 		astField := ast.Field{
-			Names: []*ast.Ident{{Name: field.Name}}, Type: &ast.Ident{Name: string(field.Type)},
+			Names: []*ast.Ident{{Name: strings.ToUpper(field.Name[:1]) + field.Name[1:]}}, Type: &ast.Ident{Name: string(field.Type)},
 		}
 		astFields = append(astFields, &astField)
 	}
@@ -79,6 +62,7 @@ func GenerateEntity(directory string, entity *model.Entity) {
 		},
 	}
 
+	root.Decls = append(root.Decls, &ast.GenDecl{Tok: token.IMPORT, Specs: []ast.Spec{imports[0]}})
 	root.Decls = append(root.Decls, gendecl1)
 
 	ast.Print(fset, root)
@@ -119,13 +103,7 @@ func GenerateRepository(directory string, entity *model.Entity) {
 		{
 			Path: &ast.BasicLit{
 				Kind:  token.STRING,
-				Value: "\"fmt\"",
-			},
-		},
-		{
-			Path: &ast.BasicLit{
-				Kind:  token.STRING,
-				Value: "\"log\"",
+				Value: "\"example.com/ast1/test/model\"",
 			},
 		},
 		{
@@ -153,7 +131,7 @@ func GenerateRepository(directory string, entity *model.Entity) {
 			Fields: &ast.FieldList{
 				List: []*ast.Field{
 					&ast.Field{
-						Names: []*ast.Ident{{Name: "StudentRepository"}}, Type: &ast.Ident{Name: string("repository.StudentRepository")},
+						Names: []*ast.Ident{{Name: "db"}}, Type: &ast.Ident{Name: string("*sql.DB")},
 					},
 				},
 			},
@@ -167,8 +145,12 @@ func GenerateRepository(directory string, entity *model.Entity) {
 		},
 	}
 
-	root.Decls = append(root.Decls, &ast.GenDecl{Tok: token.IMPORT, Specs: []ast.Spec{imports[0], imports[1], imports[2], imports[3]}})
+	root.Decls = append(root.Decls, &ast.GenDecl{Tok: token.IMPORT, Specs: []ast.Spec{imports[0], imports[1], imports[2]}})
 	root.Decls = append(root.Decls, gendecl1)
+
+	root.Decls = append(root.Decls, GenerateCreateMethod(entity))
+	root.Decls = append(root.Decls, GenerateUpdateMethod(entity))
+	root.Decls = append(root.Decls, GenerateDeleteMethod(entity))
 
 	ast.Print(fset, root)
 
@@ -185,6 +167,193 @@ func GenerateRepository(directory string, entity *model.Entity) {
 		fmt.Println("Error writing AST to file:", err)
 		return
 	}
+}
+
+func GenerateCreateMethod(entity *model.Entity) *ast.FuncDecl {
+	// Create a field list for the method parameters
+	params := []*ast.Field{
+		{
+			Names: []*ast.Ident{ast.NewIdent(strings.ToLower(entity.Name))},
+			Type:  &ast.Ident{Name: "*model." + entity.Name},
+		},
+	}
+
+	// Create a field list for the method results
+	results := []*ast.Field{
+		{
+			Type: &ast.Ident{Name: "error"},
+		},
+	}
+
+	body := &ast.BlockStmt{
+		List: []ast.Stmt{
+			&ast.AssignStmt{
+				Lhs: []ast.Expr{ast.NewIdent("_"), ast.NewIdent("err")},
+				Tok: token.DEFINE,
+				Rhs: []ast.Expr{
+					&ast.CallExpr{
+						Fun: &ast.SelectorExpr{
+							X:   ast.NewIdent("r.db"),
+							Sel: ast.NewIdent("Exec"),
+						},
+						Args: []ast.Expr{
+							&ast.BasicLit{Kind: token.STRING, Value: "\"INSERT INTO students (id, name, age) VALUES ($1, $2, $3)\""},
+							&ast.SelectorExpr{X: ast.NewIdent("student"), Sel: ast.NewIdent("Id")},
+							&ast.SelectorExpr{X: ast.NewIdent("student"), Sel: ast.NewIdent("Name")},
+							&ast.SelectorExpr{X: ast.NewIdent("student"), Sel: ast.NewIdent("Age")},
+						},
+					},
+				},
+			},
+			&ast.ReturnStmt{
+				Results: []ast.Expr{ast.NewIdent("err")},
+			},
+		},
+	}
+
+	// Create a function declaration for the example method
+	exampleMethod := &ast.FuncDecl{
+		Recv: &ast.FieldList{
+			List: []*ast.Field{
+				{
+					Names: []*ast.Ident{ast.NewIdent("r")},
+					Type:  &ast.StarExpr{X: &ast.Ident{Name: entity.Name + "Repository"}},
+				},
+			},
+		},
+		Name: ast.NewIdent("Create"),
+		Type: &ast.FuncType{
+			Params:  &ast.FieldList{List: params},
+			Results: &ast.FieldList{List: results},
+		},
+		Body: body,
+	}
+
+	return exampleMethod
+}
+
+func GenerateUpdateMethod(entity *model.Entity) *ast.FuncDecl {
+	// Create a field list for the method parameters
+	params := []*ast.Field{
+		{
+			Names: []*ast.Ident{ast.NewIdent(strings.ToLower(entity.Name))},
+			Type:  &ast.Ident{Name: "*model." + entity.Name},
+		},
+	}
+
+	// Create a field list for the method results
+	results := []*ast.Field{
+		{
+			Type: &ast.Ident{Name: "error"},
+		},
+	}
+
+	body := &ast.BlockStmt{
+		List: []ast.Stmt{
+			&ast.AssignStmt{
+				Lhs: []ast.Expr{ast.NewIdent("_"), ast.NewIdent("err")},
+				Tok: token.DEFINE,
+				Rhs: []ast.Expr{
+					&ast.CallExpr{
+						Fun: &ast.SelectorExpr{
+							X:   ast.NewIdent("r.db"),
+							Sel: ast.NewIdent("Exec"),
+						},
+						Args: []ast.Expr{
+							&ast.BasicLit{Kind: token.STRING, Value: "\"UPDATE students SET name = $2, age = $3 WHERE id = $1\""},
+							&ast.SelectorExpr{X: ast.NewIdent("student"), Sel: ast.NewIdent("Id")},
+							&ast.SelectorExpr{X: ast.NewIdent("student"), Sel: ast.NewIdent("Name")},
+							&ast.SelectorExpr{X: ast.NewIdent("student"), Sel: ast.NewIdent("Age")},
+						},
+					},
+				},
+			},
+			&ast.ReturnStmt{
+				Results: []ast.Expr{ast.NewIdent("err")},
+			},
+		},
+	}
+
+	// Create a function declaration for the example method
+	exampleMethod := &ast.FuncDecl{
+		Recv: &ast.FieldList{
+			List: []*ast.Field{
+				{
+					Names: []*ast.Ident{ast.NewIdent("r")},
+					Type:  &ast.StarExpr{X: &ast.Ident{Name: entity.Name + "Repository"}},
+				},
+			},
+		},
+		Name: ast.NewIdent("Update"),
+		Type: &ast.FuncType{
+			Params:  &ast.FieldList{List: params},
+			Results: &ast.FieldList{List: results},
+		},
+		Body: body,
+	}
+
+	return exampleMethod
+}
+
+func GenerateDeleteMethod(entity *model.Entity) *ast.FuncDecl {
+	// Create a field list for the method parameters
+	params := []*ast.Field{
+		{
+			Names: []*ast.Ident{ast.NewIdent(strings.ToLower(entity.Name))},
+			Type:  &ast.Ident{Name: "*model." + entity.Name},
+		},
+	}
+
+	// Create a field list for the method results
+	results := []*ast.Field{
+		{
+			Type: &ast.Ident{Name: "error"},
+		},
+	}
+
+	body := &ast.BlockStmt{
+		List: []ast.Stmt{
+			&ast.AssignStmt{
+				Lhs: []ast.Expr{ast.NewIdent("_"), ast.NewIdent("err")},
+				Tok: token.DEFINE,
+				Rhs: []ast.Expr{
+					&ast.CallExpr{
+						Fun: &ast.SelectorExpr{
+							X:   ast.NewIdent("r.db"),
+							Sel: ast.NewIdent("Exec"),
+						},
+						Args: []ast.Expr{
+							&ast.BasicLit{Kind: token.STRING, Value: "\"DELETE students  WHERE id = $1\""},
+							&ast.SelectorExpr{X: ast.NewIdent("student"), Sel: ast.NewIdent("Id")},
+						},
+					},
+				},
+			},
+			&ast.ReturnStmt{
+				Results: []ast.Expr{ast.NewIdent("err")},
+			},
+		},
+	}
+
+	// Create a function declaration for the example method
+	exampleMethod := &ast.FuncDecl{
+		Recv: &ast.FieldList{
+			List: []*ast.Field{
+				{
+					Names: []*ast.Ident{ast.NewIdent("r")},
+					Type:  &ast.StarExpr{X: &ast.Ident{Name: entity.Name + "Repository"}},
+				},
+			},
+		},
+		Name: ast.NewIdent("Delete"),
+		Type: &ast.FuncType{
+			Params:  &ast.FieldList{List: params},
+			Results: &ast.FieldList{List: results},
+		},
+		Body: body,
+	}
+
+	return exampleMethod
 }
 
 func GenerateService(directory string, entity *model.Entity) {
@@ -241,8 +410,9 @@ func GenerateService(directory string, entity *model.Entity) {
 		Type: &ast.StructType{
 			Fields: &ast.FieldList{
 				List: []*ast.Field{
+
 					&ast.Field{
-						Names: []*ast.Ident{{Name: "db"}}, Type: &ast.Ident{Name: string("*sql.DB")},
+						Names: []*ast.Ident{{Name: "StudentRepository"}}, Type: &ast.Ident{Name: string("repository.StudentRepository")},
 					},
 				},
 			},
@@ -329,8 +499,8 @@ func GenerateRestApiHandler(directory string, entity *model.Entity) {
 		Type: &ast.StructType{
 			Fields: &ast.FieldList{
 				List: []*ast.Field{
-					&ast.Field{
-						Names: []*ast.Ident{{Name: "db"}}, Type: &ast.Ident{Name: string("*sql.DB")},
+					{
+						Names: []*ast.Ident{{Name: "StudentService"}}, Type: &ast.Ident{Name: string("service.StudentService")},
 					},
 				},
 			},

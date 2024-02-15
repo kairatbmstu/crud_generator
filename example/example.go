@@ -16,25 +16,6 @@ type Student struct {
 	// Add other fields if needed
 }
 
-// StudentRepository handles database operations for students.
-type StudentRepository struct {
-	db *sql.DB
-}
-
-// NewStudentRepository creates a new StudentRepository instance.
-func NewStudentRepository(dataSourceName string) (*StudentRepository, error) {
-	db, err := sql.Open("postgres", dataSourceName)
-	if err != nil {
-		return nil, err
-	}
-	return &StudentRepository{db: db}, nil
-}
-
-// Close closes the underlying database connection.
-func (r *StudentRepository) Close() error {
-	return r.db.Close()
-}
-
 // Create inserts a new student into the database.
 func (r *StudentRepository) Create(s *Student) error {
 	_, err := r.db.Exec("INSERT INTO students (name, age) VALUES ($1, $2)", s.Name, s.Age)
@@ -62,6 +43,25 @@ func (r *StudentRepository) FindByID(id int) (*Student, error) {
 	}
 	s.ID = id
 	return &s, nil
+}
+
+// StudentRepository handles database operations for students.
+type StudentRepository struct {
+	db *sql.DB
+}
+
+// NewStudentRepository creates a new StudentRepository instance.
+func NewStudentRepository(dataSourceName string) (*StudentRepository, error) {
+	db, err := sql.Open("postgres", dataSourceName)
+	if err != nil {
+		return nil, err
+	}
+	return &StudentRepository{db: db}, nil
+}
+
+// Close closes the underlying database connection.
+func (r *StudentRepository) Close() error {
+	return r.db.Close()
 }
 
 // FindByName retrieves a list of students from the database by name.
@@ -110,7 +110,7 @@ func (r *StudentRepository) FindByAge(age int) ([]*Student, error) {
 	return students, nil
 }
 
-func main() {
+func main2() {
 	// Replace the dataSourceName with your PostgreSQL connection string
 	dataSourceName := "user=yourusername password=yourpassword dbname=yourdbname sslmode=disable"
 	repo, err := NewStudentRepository(dataSourceName)

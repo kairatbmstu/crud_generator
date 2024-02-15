@@ -25,7 +25,7 @@ JHipster supports many field types. This support depends on your database backen
 const (
 	FieldType_int     = "int"
 	FieldType_string  = "string"
-	FieldType_uuid    = "UUID"
+	FieldType_uuid    = "uuid.UUID"
 	FieldType_boolean = "bool"
 )
 
@@ -55,10 +55,10 @@ type Entity struct {
 type RelationshipType string
 
 const (
-	RelationshipType_OneToOne   = "onetoone"
-	RelationshipType_OneToMany  = "onetomany"
-	RelationshipType_ManyToOne  = "manytoone"
-	RelationshipType_ManyToMany = "manytomany"
+	RelationshipType_OneToOne   = "one-to-one"
+	RelationshipType_OneToMany  = "one-to-many"
+	RelationshipType_ManyToOne  = "many-to-one"
+	RelationshipType_ManyToMany = "many-to-many"
 )
 
 type Relationship struct {

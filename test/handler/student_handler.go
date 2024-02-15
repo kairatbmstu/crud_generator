@@ -8,5 +8,5 @@ import (
 )
 
 type StudentHandler struct {
-	db *sql.DB
+	StudentService service.StudentService
 }
