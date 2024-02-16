@@ -102,6 +102,42 @@ func main() {
 		},
 	})
 
+	codegenerator.GenerateDTO("test/dto", &model.Entity{
+		Name: "Student",
+		Fields: []model.Field{
+			model.Field{
+				Name: "id",
+				Type: model.FieldType_uuid,
+			},
+			model.Field{
+				Name: "name",
+				Type: model.FieldType_string,
+			},
+			model.Field{
+				Name: "age",
+				Type: model.FieldType_int,
+			},
+		},
+	})
+
+	codegenerator.GenerateMapper("test/mapper", &model.Entity{
+		Name: "Student",
+		Fields: []model.Field{
+			model.Field{
+				Name: "id",
+				Type: model.FieldType_uuid,
+			},
+			model.Field{
+				Name: "name",
+				Type: model.FieldType_string,
+			},
+			model.Field{
+				Name: "age",
+				Type: model.FieldType_int,
+			},
+		},
+	})
+
 	codegenerator.GenerateRepository("test/repository", &model.Entity{
 		Name: "Student",
 		Fields: []model.Field{

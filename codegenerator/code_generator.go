@@ -82,6 +82,280 @@ func GenerateEntity(directory string, entity *model.Entity) {
 	}
 }
 
+func GenerateDTO(directory string, entity *model.Entity) {
+	// Create a new file set.
+	fset := token.NewFileSet()
+
+	// Define the root of the AST.
+	root := &ast.File{
+		Name:  ast.NewIdent("model"),
+		Decls: []ast.Decl{},
+	}
+
+	// Import declarations
+	imports := []*ast.ImportSpec{
+
+		{
+			Path: &ast.BasicLit{
+				Kind:  token.STRING,
+				Value: "\"github.com/google/uuid\"",
+			},
+		},
+	}
+
+	root.Imports = append(root.Imports, imports...)
+
+	astFields := []*ast.Field{}
+	for _, field := range entity.Fields {
+		astField := ast.Field{
+			Names: []*ast.Ident{{Name: strings.ToUpper(field.Name[:1]) + field.Name[1:]}}, Type: &ast.Ident{Name: string(field.Type)},
+		}
+		astFields = append(astFields, &astField)
+	}
+
+	// Student struct declaration
+	modelStruct := &ast.TypeSpec{
+		Name: &ast.Ident{Name: entity.Name + "DTO"},
+		Type: &ast.StructType{
+			Fields: &ast.FieldList{
+				List: astFields,
+			},
+		},
+	}
+
+	gendecl1 := &ast.GenDecl{
+		Tok: token.TYPE,
+		Specs: []ast.Spec{
+			modelStruct,
+		},
+	}
+
+	root.Decls = append(root.Decls, &ast.GenDecl{Tok: token.IMPORT, Specs: []ast.Spec{imports[0]}})
+	root.Decls = append(root.Decls, gendecl1)
+
+	ast.Print(fset, root)
+
+	// Format and write the AST code to a Go file.
+	file, err := os.Create(directory + "/" + strings.ToLower(entity.Name) + "_dto.go")
+	if err != nil {
+		fmt.Println("Error creating file:", err)
+		return
+	}
+	defer file.Close()
+
+	err = format.Node(file, fset, root)
+	if err != nil {
+		fmt.Println("Error writing AST to file:", err)
+		return
+	}
+}
+
+func GenerateMapper(directory string, entity *model.Entity) {
+	// Create a new file set.
+	fset := token.NewFileSet()
+
+	// Define the root of the AST.
+	root := &ast.File{
+		Name:  ast.NewIdent("mapper"),
+		Decls: []ast.Decl{},
+	}
+
+	// Import declarations
+	imports := []*ast.ImportSpec{
+		{
+			Path: &ast.BasicLit{
+				Kind:  token.STRING,
+				Value: "\"example.com/ast1/test/model\"",
+			},
+		},
+		{
+			Path: &ast.BasicLit{
+				Kind:  token.STRING,
+				Value: "\"example.com/ast1/test/repository\"",
+			},
+		},
+	}
+
+	root.Imports = imports
+
+	astFields := []*ast.Field{}
+	for _, field := range entity.Fields {
+		astField := ast.Field{
+			Names: []*ast.Ident{{Name: field.Name}}, Type: &ast.Ident{Name: string(field.Type)},
+		}
+		astFields = append(astFields, &astField)
+	}
+
+	// Student struct declaration
+	repositoryStruct := &ast.TypeSpec{
+		Name: &ast.Ident{Name: entity.Name + "Mapper"},
+		Type: &ast.StructType{
+			Fields: &ast.FieldList{
+				List: []*ast.Field{
+					// &ast.Field{
+					// 	Names: []*ast.Ident{{Name: "db"}}, Type: &ast.Ident{Name: string("*sql.DB")},
+					// },
+				},
+			},
+		},
+	}
+
+	gendecl1 := &ast.GenDecl{
+		Tok: token.TYPE,
+		Specs: []ast.Spec{
+			repositoryStruct,
+		},
+	}
+
+	root.Decls = append(root.Decls, &ast.GenDecl{Tok: token.IMPORT, Specs: []ast.Spec{imports[0], imports[1]}})
+	root.Decls = append(root.Decls, gendecl1)
+
+	root.Decls = append(root.Decls, GenerateToDTOMethod(entity))
+	root.Decls = append(root.Decls, GenerateToEntityMethod(entity))
+
+	ast.Print(fset, root)
+
+	// Format and write the AST code to a Go file.
+	file, err := os.Create(directory + "/" + strings.ToLower(entity.Name) + "_mapper.go")
+	if err != nil {
+		fmt.Println("Error creating file:", err)
+		return
+	}
+	defer file.Close()
+
+	err = format.Node(file, fset, root)
+	if err != nil {
+		fmt.Println("Error writing AST to file:", err)
+		return
+	}
+}
+
+func GenerateToDTOMethod(entity *model.Entity) *ast.FuncDecl {
+	// Create a field list for the method parameters
+	params := []*ast.Field{
+		{
+			Names: []*ast.Ident{ast.NewIdent(strings.ToLower(entity.Name))},
+			Type:  &ast.Ident{Name: "*model." + entity.Name},
+		},
+	}
+
+	// Create a field list for the method results
+	results := []*ast.Field{
+		{
+			Type: &ast.Ident{Name: "dto." + entity.Name + "DTO"},
+		},
+	}
+
+	body := &ast.BlockStmt{
+		List: []ast.Stmt{
+			// &ast.AssignStmt{
+			// 	Lhs: []ast.Expr{ast.NewIdent("_"), ast.NewIdent("err")},
+			// 	Tok: token.DEFINE,
+			// 	Rhs: []ast.Expr{
+			// 		&ast.CallExpr{
+			// 			Fun: &ast.SelectorExpr{
+			// 				X:   ast.NewIdent("r.db"),
+			// 				Sel: ast.NewIdent("Exec"),
+			// 			},
+			// 			Args: []ast.Expr{
+			// 				&ast.BasicLit{Kind: token.STRING, Value: "\"INSERT INTO students (id, name, age) VALUES ($1, $2, $3)\""},
+			// 				&ast.SelectorExpr{X: ast.NewIdent("student"), Sel: ast.NewIdent("Id")},
+			// 				&ast.SelectorExpr{X: ast.NewIdent("student"), Sel: ast.NewIdent("Name")},
+			// 				&ast.SelectorExpr{X: ast.NewIdent("student"), Sel: ast.NewIdent("Age")},
+			// 			},
+			// 		},
+			// 	},
+			// },
+			&ast.ReturnStmt{
+				Results: []ast.Expr{ast.NewIdent("err")},
+			},
+		},
+	}
+
+	// Create a function declaration for the example method
+	exampleMethod := &ast.FuncDecl{
+		Recv: &ast.FieldList{
+			List: []*ast.Field{
+				{
+					Names: []*ast.Ident{ast.NewIdent("r")},
+					Type:  &ast.StarExpr{X: &ast.Ident{Name: entity.Name + "Mapper"}},
+				},
+			},
+		},
+		Name: ast.NewIdent("ToDTO"),
+		Type: &ast.FuncType{
+			Params:  &ast.FieldList{List: params},
+			Results: &ast.FieldList{List: results},
+		},
+		Body: body,
+	}
+
+	return exampleMethod
+}
+
+func GenerateToEntityMethod(entity *model.Entity) *ast.FuncDecl {
+	// Create a field list for the method parameters
+	params := []*ast.Field{
+		{
+			Names: []*ast.Ident{ast.NewIdent(strings.ToLower(entity.Name))},
+			Type:  &ast.Ident{Name: "*dto." + entity.Name + "DTO"},
+		},
+	}
+
+	// Create a field list for the method results
+	results := []*ast.Field{
+		{
+			Type: &ast.Ident{Name: "entity." + entity.Name},
+		},
+	}
+
+	body := &ast.BlockStmt{
+		List: []ast.Stmt{
+			// &ast.AssignStmt{
+			// 	Lhs: []ast.Expr{ast.NewIdent("_"), ast.NewIdent("err")},
+			// 	Tok: token.DEFINE,
+			// 	Rhs: []ast.Expr{
+			// 		&ast.CallExpr{
+			// 			Fun: &ast.SelectorExpr{
+			// 				X:   ast.NewIdent("r.db"),
+			// 				Sel: ast.NewIdent("Exec"),
+			// 			},
+			// 			Args: []ast.Expr{
+			// 				&ast.BasicLit{Kind: token.STRING, Value: "\"INSERT INTO students (id, name, age) VALUES ($1, $2, $3)\""},
+			// 				&ast.SelectorExpr{X: ast.NewIdent("student"), Sel: ast.NewIdent("Id")},
+			// 				&ast.SelectorExpr{X: ast.NewIdent("student"), Sel: ast.NewIdent("Name")},
+			// 				&ast.SelectorExpr{X: ast.NewIdent("student"), Sel: ast.NewIdent("Age")},
+			// 			},
+			// 		},
+			// 	},
+			// },
+			&ast.ReturnStmt{
+				Results: []ast.Expr{ast.NewIdent("err")},
+			},
+		},
+	}
+
+	// Create a function declaration for the example method
+	exampleMethod := &ast.FuncDecl{
+		Recv: &ast.FieldList{
+			List: []*ast.Field{
+				{
+					Names: []*ast.Ident{ast.NewIdent("r")},
+					Type:  &ast.StarExpr{X: &ast.Ident{Name: entity.Name + "Mapper"}},
+				},
+			},
+		},
+		Name: ast.NewIdent("ToEntity"),
+		Type: &ast.FuncType{
+			Params:  &ast.FieldList{List: params},
+			Results: &ast.FieldList{List: results},
+		},
+		Body: body,
+	}
+
+	return exampleMethod
+}
+
 func GenerateRepository(directory string, entity *model.Entity) {
 	// Create a new file set.
 	fset := token.NewFileSet()
