@@ -418,12 +418,6 @@ func GenerateRepository(directory string, entity *model.Entity) {
 				Value: "\"example.com/ast1/test/entity\"",
 			},
 		},
-		{
-			Path: &ast.BasicLit{
-				Kind:  token.STRING,
-				Value: "\"example.com/ast1/test/repository\"",
-			},
-		},
 	}
 
 	root.Imports = imports
@@ -457,7 +451,7 @@ func GenerateRepository(directory string, entity *model.Entity) {
 		},
 	}
 
-	root.Decls = append(root.Decls, &ast.GenDecl{Tok: token.IMPORT, Specs: []ast.Spec{imports[0], imports[1], imports[2]}})
+	root.Decls = append(root.Decls, &ast.GenDecl{Tok: token.IMPORT, Specs: []ast.Spec{imports[0], imports[1]}})
 	root.Decls = append(root.Decls, gendecl1)
 
 	root.Decls = append(root.Decls, GenerateCreateMethod(entity))
@@ -497,14 +491,9 @@ func GenerateCreateMethod(entity *model.Entity) *ast.FuncDecl {
 		},
 	}
 
-	insertExpression := []ast.Expr{
-		&ast.BasicLit{Kind: token.STRING, Value: "\"INSERT INTO " + entity.TableName() + " (" +
-			entity.TableFields() + ") VALUES (" + entity.InsertParameters() + ")\""},
-	}
+	var entityManager = NewEntityManager(entity)
 
-	for _, field := range entity.Fields {
-		insertExpression = append(insertExpression, &ast.SelectorExpr{X: ast.NewIdent(entity.Name.Lower()), Sel: ast.NewIdent(field.Name)})
-	}
+	insertExpression := entityManager.InsertSql()
 
 	body := &ast.BlockStmt{
 		List: []ast.Stmt{
@@ -564,6 +553,10 @@ func GenerateUpdateMethod(entity *model.Entity) *ast.FuncDecl {
 		},
 	}
 
+	var entityManager = NewEntityManager(entity)
+
+	updateExpression := entityManager.UpdateSql()
+
 	body := &ast.BlockStmt{
 		List: []ast.Stmt{
 			&ast.AssignStmt{
@@ -575,12 +568,7 @@ func GenerateUpdateMethod(entity *model.Entity) *ast.FuncDecl {
 							X:   ast.NewIdent("r.db"),
 							Sel: ast.NewIdent("Exec"),
 						},
-						Args: []ast.Expr{
-							&ast.BasicLit{Kind: token.STRING, Value: "\"UPDATE students SET name = $2, age = $3 WHERE id = $1\""},
-							&ast.SelectorExpr{X: ast.NewIdent("student"), Sel: ast.NewIdent("Id")},
-							&ast.SelectorExpr{X: ast.NewIdent("student"), Sel: ast.NewIdent("Name")},
-							&ast.SelectorExpr{X: ast.NewIdent("student"), Sel: ast.NewIdent("Age")},
-						},
+						Args: updateExpression,
 					},
 				},
 			},
@@ -627,6 +615,8 @@ func GenerateDeleteMethod(entity *model.Entity) *ast.FuncDecl {
 		},
 	}
 
+	manager := NewEntityManager(entity)
+
 	body := &ast.BlockStmt{
 		List: []ast.Stmt{
 			&ast.AssignStmt{
@@ -639,8 +629,75 @@ func GenerateDeleteMethod(entity *model.Entity) *ast.FuncDecl {
 							Sel: ast.NewIdent("Exec"),
 						},
 						Args: []ast.Expr{
-							&ast.BasicLit{Kind: token.STRING, Value: "\"DELETE students  WHERE id = $1\""},
-							&ast.SelectorExpr{X: ast.NewIdent("student"), Sel: ast.NewIdent("Id")},
+							&ast.BasicLit{Kind: token.STRING, Value: "\"DELETE " + manager.TableName() + "  WHERE id = $1\""},
+							&ast.SelectorExpr{X: ast.NewIdent(entity.Name.Lower()), Sel: ast.NewIdent("Id")},
+						},
+					},
+				},
+			},
+			&ast.ReturnStmt{
+				Results: []ast.Expr{ast.NewIdent("err")},
+			},
+		},
+	}
+
+	// Create a function declaration for the example method
+	exampleMethod := &ast.FuncDecl{
+		Recv: &ast.FieldList{
+			List: []*ast.Field{
+				{
+					Names: []*ast.Ident{ast.NewIdent("r")},
+					Type:  &ast.StarExpr{X: &ast.Ident{Name: entity.Name.String() + "Repository"}},
+				},
+			},
+		},
+		Name: ast.NewIdent("Delete"),
+		Type: &ast.FuncType{
+			Params:  &ast.FieldList{List: params},
+			Results: &ast.FieldList{List: results},
+		},
+		Body: body,
+	}
+
+	return exampleMethod
+}
+
+func GenerateFindByIDMethod(entity *model.Entity) *ast.FuncDecl {
+	// Create a field list for the method parameters
+	params := []*ast.Field{
+		{
+			Names: []*ast.Ident{ast.NewIdent(strings.ToLower(entity.Name.String()))},
+			Type:  &ast.Ident{Name: "*entity." + entity.Name.String()},
+		},
+	}
+
+	// Create a field list for the method results
+	results := []*ast.Field{
+		{
+			Names: []*ast.Ident{ast.NewIdent(entity.Name.Lower())},
+			Type:  &ast.Ident{Name: "*entity." + entity.Name.String()},
+		},
+		{
+			Type: &ast.Ident{Name: "error"},
+		},
+	}
+
+	manager := NewEntityManager(entity)
+
+	body := &ast.BlockStmt{
+		List: []ast.Stmt{
+			&ast.AssignStmt{
+				Lhs: []ast.Expr{ast.NewIdent("_"), ast.NewIdent("err")},
+				Tok: token.DEFINE,
+				Rhs: []ast.Expr{
+					&ast.CallExpr{
+						Fun: &ast.SelectorExpr{
+							X:   ast.NewIdent("r.db"),
+							Sel: ast.NewIdent("Exec"),
+						},
+						Args: []ast.Expr{
+							&ast.BasicLit{Kind: token.STRING, Value: "\"SELECT " + manager.TableFields() + " from " + manager.TableName() + "  WHERE id = $1\""},
+							&ast.SelectorExpr{X: ast.NewIdent(entity.Name.Lower()), Sel: ast.NewIdent("Id")},
 						},
 					},
 				},
