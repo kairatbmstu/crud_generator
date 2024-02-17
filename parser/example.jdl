@@ -2,7 +2,7 @@ entity Student {
     id UUID
     firstname String
     lastname String
-    age String
+    age Integer
 }
 
 entity Group {

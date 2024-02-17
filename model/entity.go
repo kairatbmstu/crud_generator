@@ -81,4 +81,5 @@ type File struct {
 type Model struct {
 	Entities      []Entity
 	Relationships []Relationship
+	Paginates     []Paginate
 }
