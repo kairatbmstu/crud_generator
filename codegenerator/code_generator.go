@@ -47,7 +47,7 @@ func GenerateEntity(directory string, entity *model.Entity) {
 
 	// Student struct declaration
 	modelStruct := &ast.TypeSpec{
-		Name: &ast.Ident{Name: entity.Name},
+		Name: &ast.Ident{Name: entity.Name.String()},
 		Type: &ast.StructType{
 			Fields: &ast.FieldList{
 				List: astFields,
@@ -68,7 +68,7 @@ func GenerateEntity(directory string, entity *model.Entity) {
 	ast.Print(fset, root)
 
 	// Format and write the AST code to a Go file.
-	file, err := os.Create(directory + "/" + strings.ToLower(entity.Name) + ".go")
+	file, err := os.Create(directory + "/" + strings.ToLower(entity.Name.String()) + ".go")
 	if err != nil {
 		fmt.Println("Error creating file:", err)
 		return
@@ -115,7 +115,7 @@ func GenerateDTO(directory string, entity *model.Entity) {
 
 	// Student struct declaration
 	modelStruct := &ast.TypeSpec{
-		Name: &ast.Ident{Name: entity.Name + "DTO"},
+		Name: &ast.Ident{Name: entity.Name.String() + "DTO"},
 		Type: &ast.StructType{
 			Fields: &ast.FieldList{
 				List: astFields,
@@ -136,7 +136,7 @@ func GenerateDTO(directory string, entity *model.Entity) {
 	ast.Print(fset, root)
 
 	// Format and write the AST code to a Go file.
-	file, err := os.Create(directory + "/" + strings.ToLower(entity.Name) + "_dto.go")
+	file, err := os.Create(directory + "/" + strings.ToLower(entity.Name.String()) + "_dto.go")
 	if err != nil {
 		fmt.Println("Error creating file:", err)
 		return
@@ -188,7 +188,7 @@ func GenerateMapper(directory string, entity *model.Entity) {
 
 	// Student struct declaration
 	repositoryStruct := &ast.TypeSpec{
-		Name: &ast.Ident{Name: entity.Name + "Mapper"},
+		Name: &ast.Ident{Name: entity.Name.String() + "Mapper"},
 		Type: &ast.StructType{
 			Fields: &ast.FieldList{
 				List: []*ast.Field{
@@ -216,7 +216,7 @@ func GenerateMapper(directory string, entity *model.Entity) {
 	ast.Print(fset, root)
 
 	// Format and write the AST code to a Go file.
-	file, err := os.Create(directory + "/" + strings.ToLower(entity.Name) + "_mapper.go")
+	file, err := os.Create(directory + "/" + strings.ToLower(entity.Name.String()) + "_mapper.go")
 	if err != nil {
 		fmt.Println("Error creating file:", err)
 		return
@@ -232,23 +232,23 @@ func GenerateMapper(directory string, entity *model.Entity) {
 
 func GenerateToDTOMethod(entity *model.Entity) *ast.FuncDecl {
 	// Create a field list for the method parameters
-	entityVarName := strings.ToLower(entity.Name)
+	entityVarName := strings.ToLower(entity.Name.String())
 	params := []*ast.Field{
 		{
 			Names: []*ast.Ident{ast.NewIdent(entityVarName)},
-			Type:  &ast.Ident{Name: "*entity." + entity.Name},
+			Type:  &ast.Ident{Name: "*entity." + entity.Name.String()},
 		},
 	}
 
 	// Create a field list for the method results
 	results := []*ast.Field{
 		{
-			Type: &ast.Ident{Name: "dto." + entity.Name + "DTO"},
+			Type: &ast.Ident{Name: "dto." + entity.Name.String() + "DTO"},
 		},
 	}
 
-	dtoLocalVarName := strings.ToLower(entity.Name) + "DTO"
-	dtoTypeName := entity.Name + "DTO"
+	dtoLocalVarName := strings.ToLower(entity.Name.String()) + "DTO"
+	dtoTypeName := entity.Name.String() + "DTO"
 
 	fieldMappings := []*ast.AssignStmt{}
 	for _, field := range entity.Fields {
@@ -308,7 +308,7 @@ func GenerateToDTOMethod(entity *model.Entity) *ast.FuncDecl {
 			List: []*ast.Field{
 				{
 					Names: []*ast.Ident{ast.NewIdent("r")},
-					Type:  &ast.StarExpr{X: &ast.Ident{Name: entity.Name + "Mapper"}},
+					Type:  &ast.StarExpr{X: &ast.Ident{Name: entity.Name.String() + "Mapper"}},
 				},
 			},
 		},
@@ -325,9 +325,9 @@ func GenerateToDTOMethod(entity *model.Entity) *ast.FuncDecl {
 
 func GenerateToEntityMethod(entity *model.Entity) *ast.FuncDecl {
 	// Create a field list for the method parameters
-	dtoLocalVarName := strings.ToLower(entity.Name) + "DTO"
-	dtoTypeName := "*dto." + entity.Name + "DTO"
-	entityLocalVarName := strings.ToLower(entity.Name)
+	dtoLocalVarName := entity.Name.Lower() + "DTO"
+	dtoTypeName := "*dto." + entity.Name.String() + "DTO"
+	entityLocalVarName := entity.Name.Lower()
 	params := []*ast.Field{
 		{
 			Names: []*ast.Ident{ast.NewIdent(dtoLocalVarName)},
@@ -338,7 +338,7 @@ func GenerateToEntityMethod(entity *model.Entity) *ast.FuncDecl {
 	// Create a field list for the method results
 	results := []*ast.Field{
 		{
-			Type: &ast.Ident{Name: "entity." + entity.Name},
+			Type: &ast.Ident{Name: "entity." + entity.Name.String()},
 		},
 	}
 
@@ -347,7 +347,7 @@ func GenerateToEntityMethod(entity *model.Entity) *ast.FuncDecl {
 			&ast.AssignStmt{
 				Lhs: []ast.Expr{ast.NewIdent("var " + entityLocalVarName)},
 				Tok: token.ASSIGN,
-				Rhs: []ast.Expr{ast.NewIdent("entity." + entity.Name + "{}")},
+				Rhs: []ast.Expr{ast.NewIdent("entity." + entity.Name.String() + "{}")},
 			},
 			// &ast.AssignStmt{
 			// 	Lhs: []ast.Expr{ast.NewIdent("_"), ast.NewIdent("err")},
@@ -379,7 +379,7 @@ func GenerateToEntityMethod(entity *model.Entity) *ast.FuncDecl {
 			List: []*ast.Field{
 				{
 					Names: []*ast.Ident{ast.NewIdent("r")},
-					Type:  &ast.StarExpr{X: &ast.Ident{Name: entity.Name + "Mapper"}},
+					Type:  &ast.StarExpr{X: &ast.Ident{Name: entity.Name.String() + "Mapper"}},
 				},
 			},
 		},
@@ -438,7 +438,7 @@ func GenerateRepository(directory string, entity *model.Entity) {
 
 	// Student struct declaration
 	repositoryStruct := &ast.TypeSpec{
-		Name: &ast.Ident{Name: entity.Name + "Repository"},
+		Name: &ast.Ident{Name: entity.Name.String() + "Repository"},
 		Type: &ast.StructType{
 			Fields: &ast.FieldList{
 				List: []*ast.Field{
@@ -467,7 +467,7 @@ func GenerateRepository(directory string, entity *model.Entity) {
 	ast.Print(fset, root)
 
 	// Format and write the AST code to a Go file.
-	file, err := os.Create(directory + "/" + strings.ToLower(entity.Name) + "_repo.go")
+	file, err := os.Create(directory + "/" + strings.ToLower(entity.Name.String()) + "_repo.go")
 	if err != nil {
 		fmt.Println("Error creating file:", err)
 		return
@@ -485,8 +485,8 @@ func GenerateCreateMethod(entity *model.Entity) *ast.FuncDecl {
 	// Create a field list for the method parameters
 	params := []*ast.Field{
 		{
-			Names: []*ast.Ident{ast.NewIdent(strings.ToLower(entity.Name))},
-			Type:  &ast.Ident{Name: "*entity." + entity.Name},
+			Names: []*ast.Ident{ast.NewIdent(entity.Name.Lower())},
+			Type:  &ast.Ident{Name: "*entity." + entity.Name.String()},
 		},
 	}
 
@@ -495,6 +495,15 @@ func GenerateCreateMethod(entity *model.Entity) *ast.FuncDecl {
 		{
 			Type: &ast.Ident{Name: "error"},
 		},
+	}
+
+	insertExpression := []ast.Expr{
+		&ast.BasicLit{Kind: token.STRING, Value: "\"INSERT INTO " + entity.TableName() + " (" +
+			entity.TableFields() + ") VALUES (" + entity.InsertParameters() + ")\""},
+	}
+
+	for _, field := range entity.Fields {
+		insertExpression = append(insertExpression, &ast.SelectorExpr{X: ast.NewIdent(entity.Name.Lower()), Sel: ast.NewIdent(field.Name)})
 	}
 
 	body := &ast.BlockStmt{
@@ -508,12 +517,7 @@ func GenerateCreateMethod(entity *model.Entity) *ast.FuncDecl {
 							X:   ast.NewIdent("r.db"),
 							Sel: ast.NewIdent("Exec"),
 						},
-						Args: []ast.Expr{
-							&ast.BasicLit{Kind: token.STRING, Value: "\"INSERT INTO students (id, name, age) VALUES ($1, $2, $3)\""},
-							&ast.SelectorExpr{X: ast.NewIdent("student"), Sel: ast.NewIdent("Id")},
-							&ast.SelectorExpr{X: ast.NewIdent("student"), Sel: ast.NewIdent("Name")},
-							&ast.SelectorExpr{X: ast.NewIdent("student"), Sel: ast.NewIdent("Age")},
-						},
+						Args: insertExpression,
 					},
 				},
 			},
@@ -529,7 +533,7 @@ func GenerateCreateMethod(entity *model.Entity) *ast.FuncDecl {
 			List: []*ast.Field{
 				{
 					Names: []*ast.Ident{ast.NewIdent("r")},
-					Type:  &ast.StarExpr{X: &ast.Ident{Name: entity.Name + "Repository"}},
+					Type:  &ast.StarExpr{X: &ast.Ident{Name: entity.Name.String() + "Repository"}},
 				},
 			},
 		},
@@ -548,8 +552,8 @@ func GenerateUpdateMethod(entity *model.Entity) *ast.FuncDecl {
 	// Create a field list for the method parameters
 	params := []*ast.Field{
 		{
-			Names: []*ast.Ident{ast.NewIdent(strings.ToLower(entity.Name))},
-			Type:  &ast.Ident{Name: "*entity." + entity.Name},
+			Names: []*ast.Ident{ast.NewIdent(strings.ToLower(entity.Name.String()))},
+			Type:  &ast.Ident{Name: "*entity." + entity.Name.String()},
 		},
 	}
 
@@ -592,7 +596,7 @@ func GenerateUpdateMethod(entity *model.Entity) *ast.FuncDecl {
 			List: []*ast.Field{
 				{
 					Names: []*ast.Ident{ast.NewIdent("r")},
-					Type:  &ast.StarExpr{X: &ast.Ident{Name: entity.Name + "Repository"}},
+					Type:  &ast.StarExpr{X: &ast.Ident{Name: entity.Name.String() + "Repository"}},
 				},
 			},
 		},
@@ -611,8 +615,8 @@ func GenerateDeleteMethod(entity *model.Entity) *ast.FuncDecl {
 	// Create a field list for the method parameters
 	params := []*ast.Field{
 		{
-			Names: []*ast.Ident{ast.NewIdent(strings.ToLower(entity.Name))},
-			Type:  &ast.Ident{Name: "*entity." + entity.Name},
+			Names: []*ast.Ident{ast.NewIdent(strings.ToLower(entity.Name.String()))},
+			Type:  &ast.Ident{Name: "*entity." + entity.Name.String()},
 		},
 	}
 
@@ -653,7 +657,7 @@ func GenerateDeleteMethod(entity *model.Entity) *ast.FuncDecl {
 			List: []*ast.Field{
 				{
 					Names: []*ast.Ident{ast.NewIdent("r")},
-					Type:  &ast.StarExpr{X: &ast.Ident{Name: entity.Name + "Repository"}},
+					Type:  &ast.StarExpr{X: &ast.Ident{Name: entity.Name.String() + "Repository"}},
 				},
 			},
 		},
@@ -700,12 +704,12 @@ func GenerateService(directory string, entity *model.Entity) {
 
 	// Student struct declaration
 	repositoryStruct := &ast.TypeSpec{
-		Name: &ast.Ident{Name: entity.Name + "Service"},
+		Name: &ast.Ident{Name: entity.Name.String() + "Service"},
 		Type: &ast.StructType{
 			Fields: &ast.FieldList{
 				List: []*ast.Field{
 					&ast.Field{
-						Names: []*ast.Ident{{Name: entity.Name + "Repository"}}, Type: &ast.Ident{Name: string("repository." + entity.Name + "Repository")},
+						Names: []*ast.Ident{{Name: entity.Name.String() + "Repository"}}, Type: &ast.Ident{Name: string("repository." + entity.Name + "Repository")},
 					},
 				},
 			},
@@ -725,7 +729,7 @@ func GenerateService(directory string, entity *model.Entity) {
 	ast.Print(fset, root)
 
 	// Format and write the AST code to a Go file.
-	file, err := os.Create(directory + "/" + strings.ToLower(entity.Name) + "_service.go")
+	file, err := os.Create(directory + "/" + strings.ToLower(entity.Name.String()) + "_service.go")
 	if err != nil {
 		fmt.Println("Error creating file:", err)
 		return
@@ -771,12 +775,12 @@ func GenerateRestApiHandler(directory string, entity *model.Entity) {
 
 	// Student struct declaration
 	repositoryStruct := &ast.TypeSpec{
-		Name: &ast.Ident{Name: entity.Name + "Handler"},
+		Name: &ast.Ident{Name: entity.Name.String() + "Handler"},
 		Type: &ast.StructType{
 			Fields: &ast.FieldList{
 				List: []*ast.Field{
 					{
-						Names: []*ast.Ident{{Name: entity.Name + "Service"}}, Type: &ast.Ident{Name: "service." + entity.Name + "Service"},
+						Names: []*ast.Ident{{Name: entity.Name.String() + "Service"}}, Type: &ast.Ident{Name: "service." + entity.Name.String() + "Service"},
 					},
 				},
 			},
@@ -796,7 +800,7 @@ func GenerateRestApiHandler(directory string, entity *model.Entity) {
 	ast.Print(fset, root)
 
 	// Format and write the AST code to a Go file.
-	file, err := os.Create(directory + "/" + strings.ToLower(entity.Name) + "_handler.go")
+	file, err := os.Create(directory + "/" + strings.ToLower(entity.Name.String()) + "_handler.go")
 	if err != nil {
 		fmt.Println("Error creating file:", err)
 		return

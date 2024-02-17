@@ -245,7 +245,7 @@ func ParseEntity(index *int, tokens *[]Token) (*model.Entity, error) {
 	*index++
 	openParenthesis := (*tokens)[*index]
 	entity := model.Entity{}
-	entity.Name = identifierName.Value
+	entity.Name = model.EntityName(identifierName.Value)
 
 	if openParenthesis.Value != "{" {
 		return nil, errors.New("Open parenthesis should have been found { but " + openParenthesis.Value + " was found")

@@ -1,5 +1,10 @@
 package model
 
+import (
+	"strconv"
+	"strings"
+)
+
 /*
 *
 
@@ -47,9 +52,45 @@ type Field struct {
 	PaginatationType PaginationType
 }
 
+type EntityName string
+
+func (e EntityName) Lower() string {
+	return strings.ToLower(string(e))
+}
+
+func (e EntityName) String() string {
+	return string(e)
+}
+
 type Entity struct {
-	Name   string
+	Name   EntityName
 	Fields []Field
+}
+
+func (e Entity) TableName() string {
+	return e.Name.Lower() + "s"
+}
+
+func (e Entity) TableFields() string {
+	var result = ""
+	for i := 0; i < len(e.Fields); i++ {
+		result += strings.ToLower(e.Fields[i].Name)
+		if i < len(e.Fields)-1 {
+			result += ","
+		}
+	}
+	return result
+}
+
+func (e Entity) InsertParameters() string {
+	var result = ""
+	for i := 1; i <= len(e.Fields); i++ {
+		result += "$" + strconv.Itoa(i)
+		if i < len(e.Fields) {
+			result += ","
+		}
+	}
+	return result
 }
 
 type RelationshipType string

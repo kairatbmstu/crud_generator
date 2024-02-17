@@ -2,8 +2,8 @@ package repository
 
 import (
 	"database/sql"
-
 	"example.com/ast1/test/entity"
+	"example.com/ast1/test/repository"
 )
 
 type GroupRepository struct {
@@ -11,7 +11,7 @@ type GroupRepository struct {
 }
 
 func (r *GroupRepository) Create(group *entity.Group) error {
-	_, err := r.db.Exec("INSERT INTO students (id, name, age) VALUES ($1, $2, $3)", student.Id, student.Name, student.Age)
+	_, err := r.db.Exec("INSERT INTO groups (id,code,startyear) VALUES ($1,$2,$3)", group.Id, group.Code, group.StartYear)
 	return err
 }
 func (r *GroupRepository) Update(group *entity.Group) error {
