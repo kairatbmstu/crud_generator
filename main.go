@@ -1,118 +1,46 @@
 package main
 
 import (
+	"fmt"
+	"io/ioutil"
+
 	"example.com/ast1/codegenerator"
-	"example.com/ast1/model"
+	"example.com/ast1/parser"
 )
 
 func main() {
 	// // Create a new file set.
 
-	codegenerator.GenerateEntity("test/model", &model.Entity{
-		Name: "Student",
-		Fields: []model.Field{
-			model.Field{
-				Name: "id",
-				Type: model.FieldType_uuid,
-			},
-			model.Field{
-				Name: "name",
-				Type: model.FieldType_string,
-			},
-			model.Field{
-				Name: "age",
-				Type: model.FieldType_int,
-			},
-		},
-	})
+	data, err := ioutil.ReadFile("parser/example.jdl")
+	if err != nil {
+		panic(err)
+	}
+	jdlText := string(data)
 
-	codegenerator.GenerateDTO("test/dto", &model.Entity{
-		Name: "Student",
-		Fields: []model.Field{
-			model.Field{
-				Name: "id",
-				Type: model.FieldType_uuid,
-			},
-			model.Field{
-				Name: "name",
-				Type: model.FieldType_string,
-			},
-			model.Field{
-				Name: "age",
-				Type: model.FieldType_int,
-			},
-		},
-	})
+	tokens, err := parser.Tokenize(jdlText)
 
-	codegenerator.GenerateMapper("test/mapper", &model.Entity{
-		Name: "Student",
-		Fields: []model.Field{
-			model.Field{
-				Name: "id",
-				Type: model.FieldType_uuid,
-			},
-			model.Field{
-				Name: "name",
-				Type: model.FieldType_string,
-			},
-			model.Field{
-				Name: "age",
-				Type: model.FieldType_int,
-			},
-		},
-	})
+	if err != nil {
+		panic(err)
+	}
 
-	codegenerator.GenerateRepository("test/repository", &model.Entity{
-		Name: "Student",
-		Fields: []model.Field{
-			model.Field{
-				Name: "id",
-				Type: model.FieldType_uuid,
-			},
-			model.Field{
-				Name: "name",
-				Type: model.FieldType_string,
-			},
-			model.Field{
-				Name: "age",
-				Type: model.FieldType_int,
-			},
-		},
-	})
+	err = parser.LexicalAnalysis(tokens)
+	if err != nil {
+		panic(err)
+	}
 
-	codegenerator.GenerateService("test/service", &model.Entity{
-		Name: "Student",
-		Fields: []model.Field{
-			model.Field{
-				Name: "id",
-				Type: model.FieldType_uuid,
-			},
-			model.Field{
-				Name: "name",
-				Type: model.FieldType_string,
-			},
-			model.Field{
-				Name: "age",
-				Type: model.FieldType_int,
-			},
-		},
-	})
+	model, err := parser.ParseModel(tokens)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(model)
 
-	codegenerator.GenerateRestApiHandler("test/handler", &model.Entity{
-		Name: "Student",
-		Fields: []model.Field{
-			model.Field{
-				Name: "id",
-				Type: model.FieldType_uuid,
-			},
-			model.Field{
-				Name: "name",
-				Type: model.FieldType_string,
-			},
-			model.Field{
-				Name: "age",
-				Type: model.FieldType_int,
-			},
-		},
-	})
+	for _, ent := range model.Entities {
+		codegenerator.GenerateEntity("test/model", &ent)
+		codegenerator.GenerateDTO("test/dto", &ent)
+		codegenerator.GenerateMapper("test/mapper", &ent)
+		codegenerator.GenerateRepository("test/repository", &ent)
+		codegenerator.GenerateService("test/service", &ent)
+		codegenerator.GenerateRestApiHandler("test/handler", &ent)
+	}
+
 }
