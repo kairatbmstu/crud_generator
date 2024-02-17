@@ -418,6 +418,12 @@ func GenerateRepository(directory string, entity *model.Entity) {
 				Value: "\"example.com/ast1/test/entity\"",
 			},
 		},
+		{
+			Path: &ast.BasicLit{
+				Kind:  token.STRING,
+				Value: "\"github.com/google/uuid\"",
+			},
+		},
 	}
 
 	root.Imports = imports
@@ -451,12 +457,13 @@ func GenerateRepository(directory string, entity *model.Entity) {
 		},
 	}
 
-	root.Decls = append(root.Decls, &ast.GenDecl{Tok: token.IMPORT, Specs: []ast.Spec{imports[0], imports[1]}})
+	root.Decls = append(root.Decls, &ast.GenDecl{Tok: token.IMPORT, Specs: []ast.Spec{imports[0], imports[1], imports[2]}})
 	root.Decls = append(root.Decls, gendecl1)
 
 	root.Decls = append(root.Decls, GenerateCreateMethod(entity))
 	root.Decls = append(root.Decls, GenerateUpdateMethod(entity))
 	root.Decls = append(root.Decls, GenerateDeleteMethod(entity))
+	root.Decls = append(root.Decls, GenerateFindByIDMethod(entity))
 
 	ast.Print(fset, root)
 
@@ -666,16 +673,15 @@ func GenerateFindByIDMethod(entity *model.Entity) *ast.FuncDecl {
 	// Create a field list for the method parameters
 	params := []*ast.Field{
 		{
-			Names: []*ast.Ident{ast.NewIdent(strings.ToLower(entity.Name.String()))},
-			Type:  &ast.Ident{Name: "*entity." + entity.Name.String()},
+			Names: []*ast.Ident{ast.NewIdent("id")},
+			Type:  &ast.Ident{Name: "uuid.UUID"},
 		},
 	}
 
 	// Create a field list for the method results
 	results := []*ast.Field{
 		{
-			Names: []*ast.Ident{ast.NewIdent(entity.Name.Lower())},
-			Type:  &ast.Ident{Name: "*entity." + entity.Name.String()},
+			Type: &ast.Ident{Name: "*entity." + entity.Name.String()},
 		},
 		{
 			Type: &ast.Ident{Name: "error"},
@@ -693,17 +699,52 @@ func GenerateFindByIDMethod(entity *model.Entity) *ast.FuncDecl {
 					&ast.CallExpr{
 						Fun: &ast.SelectorExpr{
 							X:   ast.NewIdent("r.db"),
-							Sel: ast.NewIdent("Exec"),
+							Sel: ast.NewIdent("QueryRow"),
 						},
 						Args: []ast.Expr{
 							&ast.BasicLit{Kind: token.STRING, Value: "\"SELECT " + manager.TableFields() + " from " + manager.TableName() + "  WHERE id = $1\""},
 							&ast.SelectorExpr{X: ast.NewIdent(entity.Name.Lower()), Sel: ast.NewIdent("Id")},
 						},
 					},
+					&ast.UnaryExpr{
+						Op: token.AND,
+						X: &ast.CompositeLit{
+							Type: &ast.Ident{
+								Name: "Student",
+							},
+							Elts: []ast.Expr{
+								&ast.KeyValueExpr{
+									Key:   ast.NewIdent("Name"),
+									Value: &ast.SelectorExpr{X: ast.NewIdent("s"), Sel: ast.NewIdent("Name")},
+								},
+								&ast.KeyValueExpr{
+									Key:   ast.NewIdent("Age"),
+									Value: &ast.SelectorExpr{X: ast.NewIdent("s"), Sel: ast.NewIdent("Age")},
+								},
+							},
+						},
+					},
+				},
+			},
+			&ast.IfStmt{
+				Cond: &ast.BinaryExpr{
+					X:  ast.NewIdent("err"),
+					Op: token.NEQ,
+					Y:  ast.NewIdent("nil"),
+				},
+				Body: &ast.BlockStmt{
+					List: []ast.Stmt{
+						&ast.ReturnStmt{
+							Results: []ast.Expr{
+								ast.NewIdent("nil"),
+								ast.NewIdent("err"),
+							},
+						},
+					},
 				},
 			},
 			&ast.ReturnStmt{
-				Results: []ast.Expr{ast.NewIdent("err")},
+				Results: []ast.Expr{ast.NewIdent("nil"), ast.NewIdent("err")},
 			},
 		},
 	}
@@ -718,7 +759,7 @@ func GenerateFindByIDMethod(entity *model.Entity) *ast.FuncDecl {
 				},
 			},
 		},
-		Name: ast.NewIdent("Delete"),
+		Name: ast.NewIdent("FindByID"),
 		Type: &ast.FuncType{
 			Params:  &ast.FieldList{List: params},
 			Results: &ast.FieldList{List: results},

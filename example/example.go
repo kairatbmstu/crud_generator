@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 )
 
 // Student represents a student entity.
 type Student struct {
-	ID   int // Assuming integer for simplicity, you can use UUID here as well
+	ID   uuid.UUID // Assuming integer for simplicity, you can use UUID here as well
 	Name string
 	Age  int
 	// Add other fields if needed
@@ -23,19 +24,19 @@ func (r *StudentRepository) Create(s *Student) error {
 }
 
 // Update updates an existing student in the database.
-func (r *StudentRepository) Update(id int, s *Student) error {
+func (r *StudentRepository) Update(id uuid.UUID, s *Student) error {
 	_, err := r.db.Exec("UPDATE students SET name=$1, age=$2 WHERE id=$3", s.Name, s.Age, id)
 	return err
 }
 
 // Delete removes a student from the database by ID.
-func (r *StudentRepository) Delete(id int) error {
+func (r *StudentRepository) Delete(id uuid.UUID) error {
 	_, err := r.db.Exec("DELETE FROM students WHERE id=$1", id)
 	return err
 }
 
 // FindByID retrieves a student from the database by ID.
-func (r *StudentRepository) FindByID(id int) (*Student, error) {
+func (r *StudentRepository) FindByID(id uuid.UUID) (*Student, error) {
 	var s Student
 	err := r.db.QueryRow("SELECT name, age FROM students WHERE id=$1", id).Scan(&s.Name, &s.Age)
 	if err != nil {

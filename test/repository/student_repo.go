@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"example.com/ast1/test/entity"
+	"github.com/google/uuid"
 )
 
 type StudentRepository struct {
@@ -20,4 +21,11 @@ func (r *StudentRepository) Update(student *entity.Student) error {
 func (r *StudentRepository) Delete(student *entity.Student) error {
 	_, err := r.db.Exec("DELETE students  WHERE id = $1", student.Id)
 	return err
+}
+func (r *StudentRepository) FindByID(id uuid.UUID) (*entity.Student, error) {
+	_, err := r.db.QueryRow("SELECT id,firstname,lastname,age from students  WHERE id = $1", student.Id), &Student{Name: s.Name, Age: s.Age}
+	if err != nil {
+		return nil, err
+	}
+	return nil, err
 }
