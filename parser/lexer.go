@@ -21,9 +21,9 @@ const (
 )
 
 const (
-	Keyword_Entity       = "entity"
-	Keyword_Relationship = "relationship"
-	Keyword_Paginate     = "paginate"
+	Entity       = "entity"
+	Relationship = "relationship"
+	Paginate     = "paginate"
 )
 
 type DataType int
@@ -214,24 +214,27 @@ func ParseModel(tokens *[]Token) (*model.Model, error) {
 	var relationships = []model.Relationship{}
 	var paginates = []model.Paginate{}
 
-	for index, token := range *tokens {
-		if token.TokenType == Keyword_Entity {
-			entity, err := ParseEntity(&index, tokens)
-			if err != nil {
-				return nil, err
+	for index := 0; index < len(*tokens); index++ {
+		if (*tokens)[index].TokenType == TokenType_Keyword {
+			if (*tokens)[index].Value == Entity {
+				entity, err := ParseEntity(&index, tokens)
+				if err != nil {
+					return nil, err
+				}
+				entities = append(entities, *entity)
 			}
-			entities = append(entities, *entity)
+
+			if (*tokens)[index].Value == Relationship {
+				relationship := ParseRelationship(&index, tokens)
+				relationships = append(relationships, *relationship)
+			}
+
+			if (*tokens)[index].Value == Paginate {
+				paginate := ParsePaginate(&index, tokens)
+				paginates = append(paginates, *paginate)
+			}
 		}
 
-		if token.TokenType == Keyword_Relationship {
-			relationship := ParseRelationship(&index, tokens)
-			relationships = append(relationships, *relationship)
-		}
-
-		if token.TokenType == Keyword_Paginate {
-			paginate := ParsePaginate(&index, tokens)
-			paginates = append(paginates, *paginate)
-		}
 	}
 	return &model.Model{
 		Entities:      entities,
@@ -278,9 +281,9 @@ func ParseFields(index *int, tokens *[]Token) (*[]model.Field, error) {
 			return nil, err
 		}
 		fields = append(fields, *field)
-		if (*tokens)[i].Value != "," {
-			return nil, errors.New(", should have been found  but " + (*tokens)[i].Value + " was found")
-		}
+		// if (*tokens)[i].Value != "," {
+		// 	return nil, errors.New(", should have been found  but " + (*tokens)[i].Value + " was found")
+		// }
 	}
 	return &fields, nil
 }
