@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"strings"
 
 	"example.com/ast1/model"
 )
@@ -276,6 +277,10 @@ func ParseEntity(index *int, tokens *[]Token) (*model.Entity, error) {
 func ParseFields(index *int, tokens *[]Token) (*[]model.Field, error) {
 	fields := []model.Field{}
 	for i := *index; i < len((*tokens)); i++ {
+		if (*tokens)[i].Value == "}" {
+			*index++
+			return &fields, nil
+		}
 		field, err := ParseField(index, tokens)
 		if err != nil {
 			return nil, err
@@ -289,7 +294,29 @@ func ParseFields(index *int, tokens *[]Token) (*[]model.Field, error) {
 }
 
 func ParseField(index *int, tokens *[]Token) (*model.Field, error) {
-	return &model.Field{}, nil
+	*index++
+	fieldName := (*tokens)[*index]
+	*index++
+	fieldType := (*tokens)[*index]
+	var goType model.FieldType
+	switch fieldType.Value {
+	case "Integer":
+		goType = model.FieldType_int
+	case "String":
+		goType = model.FieldType_string
+	case "UUID":
+		goType = model.FieldType_uuid
+	case "Boolean":
+		goType = model.FieldType_boolean
+	default:
+		return nil, errors.New("Undefined type found for field : " + fieldType.Value)
+	}
+	return &model.Field{
+		Name:       fieldName.Value,
+		ColumnName: strings.ToLower(fieldName.Value),
+		JsonName:   fieldName.Value,
+		Type:       goType,
+	}, nil
 }
 
 func ParseRelationshipGroup(index *int, tokens *[]Token) []model.Relationship {
