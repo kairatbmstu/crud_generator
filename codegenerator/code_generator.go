@@ -20,7 +20,7 @@ func GenerateEntity(directory string, entity *model.Entity) {
 
 	// Define the root of the AST.
 	root := &ast.File{
-		Name:  ast.NewIdent("model"),
+		Name:  ast.NewIdent("entity"),
 		Decls: []ast.Decl{},
 	}
 
@@ -88,7 +88,7 @@ func GenerateDTO(directory string, entity *model.Entity) {
 
 	// Define the root of the AST.
 	root := &ast.File{
-		Name:  ast.NewIdent("model"),
+		Name:  ast.NewIdent("dto"),
 		Decls: []ast.Decl{},
 	}
 
@@ -165,13 +165,13 @@ func GenerateMapper(directory string, entity *model.Entity) {
 		{
 			Path: &ast.BasicLit{
 				Kind:  token.STRING,
-				Value: "\"example.com/ast1/test/model\"",
+				Value: "\"example.com/ast1/test/entity\"",
 			},
 		},
 		{
 			Path: &ast.BasicLit{
 				Kind:  token.STRING,
-				Value: "\"example.com/ast1/test/repository\"",
+				Value: "\"example.com/ast1/test/dto\"",
 			},
 		},
 	}
@@ -232,10 +232,11 @@ func GenerateMapper(directory string, entity *model.Entity) {
 
 func GenerateToDTOMethod(entity *model.Entity) *ast.FuncDecl {
 	// Create a field list for the method parameters
+	entityVarName := strings.ToLower(entity.Name)
 	params := []*ast.Field{
 		{
-			Names: []*ast.Ident{ast.NewIdent(strings.ToLower(entity.Name))},
-			Type:  &ast.Ident{Name: "*model." + entity.Name},
+			Names: []*ast.Ident{ast.NewIdent(entityVarName)},
+			Type:  &ast.Ident{Name: "*entity." + entity.Name},
 		},
 	}
 
@@ -246,8 +247,31 @@ func GenerateToDTOMethod(entity *model.Entity) *ast.FuncDecl {
 		},
 	}
 
+	dtoLocalVarName := strings.ToLower(entity.Name) + "DTO"
+	dtoTypeName := entity.Name + "DTO"
+
+	fieldMappings := []*ast.AssignStmt{}
+	for _, field := range entity.Fields {
+		var fieldMapping = &ast.AssignStmt{
+			Lhs: []ast.Expr{ast.NewIdent(dtoLocalVarName + "." + field.Name)},
+			Tok: token.ASSIGN,
+			Rhs: []ast.Expr{ast.NewIdent(entityVarName + "." + field.Name)},
+		}
+		fieldMappings = append(fieldMappings, fieldMapping)
+	}
+
 	body := &ast.BlockStmt{
 		List: []ast.Stmt{
+			&ast.AssignStmt{
+				Lhs: []ast.Expr{ast.NewIdent("var " + dtoLocalVarName)},
+				Tok: token.ASSIGN,
+				Rhs: []ast.Expr{ast.NewIdent("dto." + dtoTypeName + "{}")},
+			},
+			// &ast.AssignStmt{
+			// 	Lhs: []ast.Expr{ast.NewIdent(dtoLocalVarName + ".Id")},
+			// 	Tok: token.ASSIGN,
+			// 	Rhs: []ast.Expr{ast.NewIdent(entityVarName + ".Id")},
+			// },
 			// &ast.AssignStmt{
 			// 	Lhs: []ast.Expr{ast.NewIdent("_"), ast.NewIdent("err")},
 			// 	Tok: token.DEFINE,
@@ -266,11 +290,17 @@ func GenerateToDTOMethod(entity *model.Entity) *ast.FuncDecl {
 			// 		},
 			// 	},
 			// },
-			&ast.ReturnStmt{
-				Results: []ast.Expr{ast.NewIdent("err")},
-			},
+
 		},
 	}
+
+	for _, fieldMapping := range fieldMappings {
+		body.List = append(body.List, fieldMapping)
+	}
+
+	body.List = append(body.List, &ast.ReturnStmt{
+		Results: []ast.Expr{ast.NewIdent(dtoLocalVarName)},
+	})
 
 	// Create a function declaration for the example method
 	exampleMethod := &ast.FuncDecl{
@@ -295,10 +325,13 @@ func GenerateToDTOMethod(entity *model.Entity) *ast.FuncDecl {
 
 func GenerateToEntityMethod(entity *model.Entity) *ast.FuncDecl {
 	// Create a field list for the method parameters
+	dtoLocalVarName := strings.ToLower(entity.Name) + "DTO"
+	dtoTypeName := "*dto." + entity.Name + "DTO"
+	entityLocalVarName := strings.ToLower(entity.Name)
 	params := []*ast.Field{
 		{
-			Names: []*ast.Ident{ast.NewIdent(strings.ToLower(entity.Name))},
-			Type:  &ast.Ident{Name: "*dto." + entity.Name + "DTO"},
+			Names: []*ast.Ident{ast.NewIdent(dtoLocalVarName)},
+			Type:  &ast.Ident{Name: dtoTypeName},
 		},
 	}
 
@@ -311,6 +344,11 @@ func GenerateToEntityMethod(entity *model.Entity) *ast.FuncDecl {
 
 	body := &ast.BlockStmt{
 		List: []ast.Stmt{
+			&ast.AssignStmt{
+				Lhs: []ast.Expr{ast.NewIdent("var " + entityLocalVarName)},
+				Tok: token.ASSIGN,
+				Rhs: []ast.Expr{ast.NewIdent("entity." + entity.Name + "{}")},
+			},
 			// &ast.AssignStmt{
 			// 	Lhs: []ast.Expr{ast.NewIdent("_"), ast.NewIdent("err")},
 			// 	Tok: token.DEFINE,
@@ -330,7 +368,7 @@ func GenerateToEntityMethod(entity *model.Entity) *ast.FuncDecl {
 			// 	},
 			// },
 			&ast.ReturnStmt{
-				Results: []ast.Expr{ast.NewIdent("err")},
+				Results: []ast.Expr{ast.NewIdent(entityLocalVarName)},
 			},
 		},
 	}
@@ -377,7 +415,7 @@ func GenerateRepository(directory string, entity *model.Entity) {
 		{
 			Path: &ast.BasicLit{
 				Kind:  token.STRING,
-				Value: "\"example.com/ast1/test/model\"",
+				Value: "\"example.com/ast1/test/entity\"",
 			},
 		},
 		{
@@ -448,7 +486,7 @@ func GenerateCreateMethod(entity *model.Entity) *ast.FuncDecl {
 	params := []*ast.Field{
 		{
 			Names: []*ast.Ident{ast.NewIdent(strings.ToLower(entity.Name))},
-			Type:  &ast.Ident{Name: "*model." + entity.Name},
+			Type:  &ast.Ident{Name: "*entity." + entity.Name},
 		},
 	}
 
@@ -511,7 +549,7 @@ func GenerateUpdateMethod(entity *model.Entity) *ast.FuncDecl {
 	params := []*ast.Field{
 		{
 			Names: []*ast.Ident{ast.NewIdent(strings.ToLower(entity.Name))},
-			Type:  &ast.Ident{Name: "*model." + entity.Name},
+			Type:  &ast.Ident{Name: "*entity." + entity.Name},
 		},
 	}
 
@@ -574,7 +612,7 @@ func GenerateDeleteMethod(entity *model.Entity) *ast.FuncDecl {
 	params := []*ast.Field{
 		{
 			Names: []*ast.Ident{ast.NewIdent(strings.ToLower(entity.Name))},
-			Type:  &ast.Ident{Name: "*model." + entity.Name},
+			Type:  &ast.Ident{Name: "*entity." + entity.Name},
 		},
 	}
 
@@ -645,25 +683,7 @@ func GenerateService(directory string, entity *model.Entity) {
 		{
 			Path: &ast.BasicLit{
 				Kind:  token.STRING,
-				Value: "\"database/sql\"",
-			},
-		},
-		{
-			Path: &ast.BasicLit{
-				Kind:  token.STRING,
-				Value: "\"fmt\"",
-			},
-		},
-		{
-			Path: &ast.BasicLit{
-				Kind:  token.STRING,
-				Value: "\"log\"",
-			},
-		},
-		{
-			Path: &ast.BasicLit{
-				Kind:  token.STRING,
-				Value: "\"github.com/lib/pq\"",
+				Value: "\"example.com/ast1/test/repository\"",
 			},
 		},
 	}
@@ -684,9 +704,8 @@ func GenerateService(directory string, entity *model.Entity) {
 		Type: &ast.StructType{
 			Fields: &ast.FieldList{
 				List: []*ast.Field{
-
 					&ast.Field{
-						Names: []*ast.Ident{{Name: "StudentRepository"}}, Type: &ast.Ident{Name: string("repository.StudentRepository")},
+						Names: []*ast.Ident{{Name: entity.Name + "Repository"}}, Type: &ast.Ident{Name: string("repository." + entity.Name + "Repository")},
 					},
 				},
 			},
@@ -700,6 +719,7 @@ func GenerateService(directory string, entity *model.Entity) {
 		},
 	}
 
+	root.Decls = append(root.Decls, &ast.GenDecl{Tok: token.IMPORT, Specs: []ast.Spec{imports[0]}})
 	root.Decls = append(root.Decls, gendecl1)
 
 	ast.Print(fset, root)
@@ -734,25 +754,7 @@ func GenerateRestApiHandler(directory string, entity *model.Entity) {
 		{
 			Path: &ast.BasicLit{
 				Kind:  token.STRING,
-				Value: "\"database/sql\"",
-			},
-		},
-		{
-			Path: &ast.BasicLit{
-				Kind:  token.STRING,
-				Value: "\"fmt\"",
-			},
-		},
-		{
-			Path: &ast.BasicLit{
-				Kind:  token.STRING,
-				Value: "\"log\"",
-			},
-		},
-		{
-			Path: &ast.BasicLit{
-				Kind:  token.STRING,
-				Value: "\"github.com/lib/pq\"",
+				Value: "\"example.com/ast1/test/service\"",
 			},
 		},
 	}
@@ -774,7 +776,7 @@ func GenerateRestApiHandler(directory string, entity *model.Entity) {
 			Fields: &ast.FieldList{
 				List: []*ast.Field{
 					{
-						Names: []*ast.Ident{{Name: "StudentService"}}, Type: &ast.Ident{Name: string("service.StudentService")},
+						Names: []*ast.Ident{{Name: entity.Name + "Service"}}, Type: &ast.Ident{Name: "service." + entity.Name + "Service"},
 					},
 				},
 			},
@@ -788,7 +790,7 @@ func GenerateRestApiHandler(directory string, entity *model.Entity) {
 		},
 	}
 
-	root.Decls = append(root.Decls, &ast.GenDecl{Tok: token.IMPORT, Specs: []ast.Spec{imports[0], imports[1], imports[2], imports[3]}})
+	root.Decls = append(root.Decls, &ast.GenDecl{Tok: token.IMPORT, Specs: []ast.Spec{imports[0]}})
 	root.Decls = append(root.Decls, gendecl1)
 
 	ast.Print(fset, root)

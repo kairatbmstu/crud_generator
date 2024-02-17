@@ -1,5 +1,7 @@
 package service
 
+import "example.com/ast1/test/repository"
+
 type GroupService struct {
-	StudentRepository repository.StudentRepository
+	GroupRepository repository.GroupRepository
 }

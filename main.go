@@ -35,7 +35,7 @@ func main() {
 	fmt.Println(model)
 
 	for _, ent := range model.Entities {
-		codegenerator.GenerateEntity("test/model", &ent)
+		codegenerator.GenerateEntity("test/entity", &ent)
 		codegenerator.GenerateDTO("test/dto", &ent)
 		codegenerator.GenerateMapper("test/mapper", &ent)
 		codegenerator.GenerateRepository("test/repository", &ent)

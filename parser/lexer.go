@@ -303,7 +303,7 @@ func ParseField(index *int, tokens *[]Token) (*model.Field, error) {
 		return nil, errors.New("Undefined type found for field : " + fieldType.Value)
 	}
 	return &model.Field{
-		Name:       fieldName.Value,
+		Name:       strings.ToUpper(fieldName.Value[:1]) + fieldName.Value[1:],
 		ColumnName: strings.ToLower(fieldName.Value),
 		JsonName:   fieldName.Value,
 		Type:       goType,

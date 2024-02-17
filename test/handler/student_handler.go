@@ -1,11 +1,6 @@
 package handler
 
-import (
-	"database/sql"
-	"fmt"
-	"log"
-	"github.com/lib/pq"
-)
+import "example.com/ast1/test/service"
 
 type StudentHandler struct {
 	StudentService service.StudentService
