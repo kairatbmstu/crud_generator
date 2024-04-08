@@ -1,16 +1,28 @@
 package parser
 
 const (
-	TokenType_Undefined   = "undefined"
-	TokenType_Keyword     = "keyword"
-	TokenType_Punctuation = "punctuation"
-	TokenType_Identifier  = "identifier"
+	ILLEGAL = iota
+	KEYWORD
+	LCBRACE
+	RCBRACE
+	INTEGER
+	STRING
+	UUID
+	PAGINATE
+	WITH
+	PAGINATION
+	ENTITY
+	RELATIONSHIP
+	ONETOONE
+	ONETOMANY
+	MANYTOONE
+	MANYTOMANY
+	EOF
 )
 
-type TokenType string
+type TokenType int
 
 type Token struct {
 	Value     string
 	TokenType TokenType
-	DataType  DataType
 }

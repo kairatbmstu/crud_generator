@@ -1,19 +1,19 @@
 package parser
 
-type Tokenizer struct {
+type Lexer struct {
 	i               int
 	sourceCodeRunes []rune
 }
 
-func NewTokenizer(sourceCode string) *Tokenizer {
+func NewLexer(sourceCode string) *Lexer {
 	sourceCodeRunes := []rune(sourceCode)
-	var tokenizer = Tokenizer{
+	var tokenizer = Lexer{
 		sourceCodeRunes: sourceCodeRunes,
 	}
 	return &tokenizer
 }
 
-func (t *Tokenizer) tokenize() (*[]Token, error) {
+func (t *Lexer) Tokenize() (*[]Token, error) {
 
 	for t.i = 0; t.i < len(t.sourceCodeRunes); t.i++ {
 		switch t.sourceCodeRunes[t.i] {
@@ -38,22 +38,50 @@ func (t *Tokenizer) tokenize() (*[]Token, error) {
 	return nil, nil
 }
 
-func (t *Tokenizer) matchEntity() (*Token, bool) {
+func (t *Lexer) matchEntity() (*Token, bool) {
 	return t.match("entity")
 }
 
-func (t *Tokenizer) matchRelationship() (*Token, bool) {
+func (t *Lexer) matchRelationship() (*Token, bool) {
 	return t.match("relationship")
 }
 
-func (t *Tokenizer) matchIdentifier() (*Token, bool) {
+func (t *Lexer) matchIdentifier() (*Token, bool) {
 	return t.match("identifier")
 }
-func (t *Tokenizer) matchPaginate() (*Token, bool) {
+func (t *Lexer) matchPaginate() (*Token, bool) {
 	return t.match("paginate")
 }
 
-func (t *Tokenizer) match(matchWord string) (*Token, bool) {
+func (t *Lexer) matchWith() (*Token, bool) {
+	return t.match("with")
+}
+
+func (t *Lexer) matchPagination() (*Token, bool) {
+	return t.match("pagination")
+}
+
+func (t *Lexer) matchUUID() (*Token, bool) {
+	return t.match("pagination")
+}
+
+func (t *Lexer) matchOneToOne() (*Token, bool) {
+	return t.match("pagination")
+}
+
+func (t *Lexer) matchOneToMany() (*Token, bool) {
+	return t.match("pagination")
+}
+
+func (t *Lexer) matchManyToOne() (*Token, bool) {
+	return t.match("pagination")
+}
+
+func (t *Lexer) matchManyToMany() (*Token, bool) {
+	return t.match("pagination")
+}
+
+func (t *Lexer) match(matchWord string) (*Token, bool) {
 	var matchWordRune = []rune(matchWord)
 	var token = Token{}
 	var l int = t.i
