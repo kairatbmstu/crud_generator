@@ -17,6 +17,9 @@ func main() {
 	}
 	jdlText := string(data)
 
+	var lex = parser.NewLexer(jdlText)
+	lex.Tokenize()
+
 	tokens, err := parser.Tokenize(jdlText)
 
 	if err != nil {
