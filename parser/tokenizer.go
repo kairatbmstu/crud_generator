@@ -38,32 +38,35 @@ func (t *Tokenizer) tokenize() (*[]Token, error) {
 	return nil, nil
 }
 
-func (t *Tokenizer) matchEntity() *Token {
+func (t *Tokenizer) matchEntity() (*Token, bool) {
 	return t.match("entity")
 }
 
-func (t *Tokenizer) matchRelationship() *Token {
+func (t *Tokenizer) matchRelationship() (*Token, bool) {
 	return t.match("relationship")
 }
 
-func (t *Tokenizer) matchIdentifier() *Token {
+func (t *Tokenizer) matchIdentifier() (*Token, bool) {
 	return t.match("identifier")
 }
-func (t *Tokenizer) matchPaginate() *Token {
+func (t *Tokenizer) matchPaginate() (*Token, bool) {
 	return t.match("paginate")
 }
 
-func (t *Tokenizer) match(matchWord string) *Token {
+func (t *Tokenizer) match(matchWord string) (*Token, bool) {
 	var matchWordRune = []rune(matchWord)
 	var token = Token{}
 	var l int = t.i
 	var r int = 0
 
-	for {
-		if !(t.sourceCodeRunes[l] == matchWordRune[r]) {
-
+	for r < len(matchWordRune) {
+		if t.sourceCodeRunes[l] == matchWordRune[r] {
+			l++
+			r++
+		} else {
+			return nil, false
 		}
 	}
 
-	return &token
+	return &token, true
 }
