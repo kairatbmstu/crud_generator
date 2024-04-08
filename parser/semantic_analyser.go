@@ -42,9 +42,9 @@ func LexicalAnalysis(tokens *[]Token) error {
 	for i, _ := range *tokens {
 		if (*tokens)[i].DataType == DataTypePunctuation {
 			if (*tokens)[i].Value == "{" || (*tokens)[i].Value == "}" {
-				(*tokens)[i].TokenType = TokenType_Parenthesis
+				(*tokens)[i].TokenType = TokenType_Punctuation
 			} else if (*tokens)[i].Value == "(" || (*tokens)[i].Value == ")" {
-				(*tokens)[i].TokenType = TokenType_Brace
+				(*tokens)[i].TokenType = TokenType_Punctuation
 			}
 		} else if (*tokens)[i].DataType == DataTypeText {
 			if (*tokens)[i].Value == "entity" || (*tokens)[i].Value == "relationship" ||
