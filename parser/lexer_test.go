@@ -13,12 +13,12 @@ func TestTokenize(t *testing.T) {
 		{
 			input: "entity User { id Integer }",
 			expected: []Token{
-				{Value: "entity", TokenType: TokenType_Keyword, DataType: TypeText},
-				{Value: "User", TokenType: TokenType_Identifier, DataType: TypeText},
-				{Value: "{", TokenType: TokenType_Parenthesis, DataType: TypePunctuation},
-				{Value: "id", TokenType: TokenType_Identifier, DataType: TypeText},
-				{Value: "Integer", TokenType: TokenType_Keyword, DataType: TypeText},
-				{Value: "}", TokenType: TokenType_Parenthesis, DataType: TypePunctuation},
+				{Value: "entity", TokenType: TokenType_Keyword, DataType: DataTypeText},
+				{Value: "User", TokenType: TokenType_Identifier, DataType: DataTypeText},
+				{Value: "{", TokenType: TokenType_Parenthesis, DataType: DataTypePunctuation},
+				{Value: "id", TokenType: TokenType_Identifier, DataType: DataTypeText},
+				{Value: "Integer", TokenType: TokenType_Keyword, DataType: DataTypeText},
+				{Value: "}", TokenType: TokenType_Parenthesis, DataType: DataTypePunctuation},
 			},
 		},
 		// Add more test cases as needed

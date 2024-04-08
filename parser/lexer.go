@@ -13,37 +13,6 @@ func ParseFile(file string) model.Model {
 	return model.Model{}
 }
 
-const (
-	TokenType_Undifined   = "undefined"
-	TokenType_Keyword     = "keyword"
-	TokenType_Parenthesis = "parenthesis"
-	TokenType_Brace       = "brace"
-	TokenType_Identifier  = "identifier"
-)
-
-const (
-	Entity       = "entity"
-	Relationship = "relationship"
-	Paginate     = "paginate"
-)
-
-type DataType int
-
-const (
-	TypeUndefined   DataType = 0
-	TypeText        DataType = 1
-	TypePunctuation DataType = 2
-	TypeWhiteSpace  DataType = 3
-)
-
-type TokenType string
-
-type Token struct {
-	Value     string
-	TokenType TokenType
-	DataType  DataType
-}
-
 func main() {
 	data, err := ioutil.ReadFile("example.jdl")
 	if err != nil {
@@ -71,13 +40,13 @@ func main() {
 
 func LexicalAnalysis(tokens *[]Token) error {
 	for i, _ := range *tokens {
-		if (*tokens)[i].DataType == TypePunctuation {
+		if (*tokens)[i].DataType == DataTypePunctuation {
 			if (*tokens)[i].Value == "{" || (*tokens)[i].Value == "}" {
 				(*tokens)[i].TokenType = TokenType_Parenthesis
 			} else if (*tokens)[i].Value == "(" || (*tokens)[i].Value == ")" {
 				(*tokens)[i].TokenType = TokenType_Brace
 			}
-		} else if (*tokens)[i].DataType == TypeText {
+		} else if (*tokens)[i].DataType == DataTypeText {
 			if (*tokens)[i].Value == "entity" || (*tokens)[i].Value == "relationship" ||
 				(*tokens)[i].Value == "String" || (*tokens)[i].Value == "UUID" ||
 				(*tokens)[i].Value == "Integer" || (*tokens)[i].Value == "" ||
@@ -99,7 +68,7 @@ func Tokenize(text string) (*[]Token, error) {
 	tokens := []Token{}
 
 	buffer := []rune{}
-	prevDataType := TypeUndefined
+	prevDataType := DataTypeUndefined
 	for _, currentChar := range text {
 		if currentChar >= '0' && currentChar <= '9' {
 			return nil, errors.New("numbers are not allowed")
@@ -107,21 +76,21 @@ func Tokenize(text string) (*[]Token, error) {
 
 		if (currentChar >= 'a' && currentChar <= 'z') || (currentChar >= 'A' && currentChar <= 'Z') {
 			switch prevDataType {
-			case TypeUndefined:
+			case DataTypeUndefined:
 				buffer = []rune{}
 				buffer = append(buffer, currentChar)
 				break
-			case TypeText:
+			case DataTypeText:
 				buffer = append(buffer, currentChar)
 				break
-			case TypeWhiteSpace:
+			case DataTypeWhiteSpace:
 				buffer = []rune{}
 				buffer = append(buffer, currentChar)
 				break
-			case TypePunctuation:
+			case DataTypePunctuation:
 				if len(buffer) > 0 {
 					token := Token{
-						DataType: TypePunctuation,
+						DataType: DataTypePunctuation,
 						Value:    string(buffer),
 					}
 					tokens = append(tokens, token)
@@ -131,22 +100,22 @@ func Tokenize(text string) (*[]Token, error) {
 				buffer = append(buffer, currentChar)
 				break
 			}
-			prevDataType = TypeText
+			prevDataType = DataTypeText
 		} else if currentChar == '{' || currentChar == '}' || currentChar == '(' || currentChar == ')' {
 			switch prevDataType {
-			case TypeUndefined:
+			case DataTypeUndefined:
 				buffer = append(buffer, currentChar)
 				token := Token{
-					DataType: TypePunctuation,
+					DataType: DataTypePunctuation,
 					Value:    string(buffer),
 				}
 				tokens = append(tokens, token)
 				buffer = []rune{}
 				break
-			case TypeText:
+			case DataTypeText:
 				if len(buffer) > 0 {
 					token := Token{
-						DataType: TypeText,
+						DataType: DataTypeText,
 						Value:    string(buffer),
 					}
 					tokens = append(tokens, token)
@@ -154,20 +123,20 @@ func Tokenize(text string) (*[]Token, error) {
 				}
 				buffer = append(buffer, currentChar)
 				break
-			case TypeWhiteSpace:
+			case DataTypeWhiteSpace:
 				buffer = []rune{}
 				buffer = append(buffer, currentChar)
 				token := Token{
-					DataType: TypePunctuation,
+					DataType: DataTypePunctuation,
 					Value:    string(buffer),
 				}
 				tokens = append(tokens, token)
 				buffer = []rune{}
 				break
-			case TypePunctuation:
+			case DataTypePunctuation:
 				if len(buffer) > 0 {
 					token := Token{
-						DataType: TypePunctuation,
+						DataType: DataTypePunctuation,
 						Value:    string(buffer),
 					}
 					tokens = append(tokens, token)
@@ -176,34 +145,34 @@ func Tokenize(text string) (*[]Token, error) {
 
 				break
 			}
-			prevDataType = TypePunctuation
+			prevDataType = DataTypePunctuation
 		} else if currentChar == ' ' || currentChar == '\n' || currentChar == '\t' {
 			switch prevDataType {
-			case TypeUndefined:
+			case DataTypeUndefined:
 				break
-			case TypeText:
+			case DataTypeText:
 				if len(buffer) > 0 {
 					token := Token{
-						DataType: TypeText,
+						DataType: DataTypeText,
 						Value:    string(buffer),
 					}
 					tokens = append(tokens, token)
 					buffer = []rune{}
 				}
 				break
-			case TypeWhiteSpace:
+			case DataTypeWhiteSpace:
 				break
-			case TypePunctuation:
+			case DataTypePunctuation:
 				if len(buffer) > 0 {
 					token := Token{
-						DataType: TypePunctuation,
+						DataType: DataTypePunctuation,
 						Value:    string(buffer),
 					}
 					tokens = append(tokens, token)
 				}
 				break
 			}
-			prevDataType = TypeWhiteSpace
+			prevDataType = DataTypeWhiteSpace
 		}
 
 	}
@@ -217,16 +186,16 @@ func ParseModel(tokens *[]Token) (*model.Model, error) {
 	index := 0
 	for index < len(*tokens) {
 		if (*tokens)[index].TokenType == TokenType_Keyword {
-			if (*tokens)[index].Value == Entity {
+			if (*tokens)[index].Value == Keyword_Entity {
 				entity, err := ParseEntity(&index, tokens)
 				if err != nil {
 					return nil, err
 				}
 				entities = append(entities, *entity)
-			} else if (*tokens)[index].Value == Relationship {
+			} else if (*tokens)[index].Value == Keyword_Relationship {
 				relationship := ParseRelationship(&index, tokens)
 				relationships = append(relationships, *relationship)
-			} else if (*tokens)[index].Value == Paginate {
+			} else if (*tokens)[index].Value == Keyword_Paginate {
 				paginate := ParsePaginate(&index, tokens)
 				paginates = append(paginates, *paginate)
 			}
